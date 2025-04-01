@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-card {
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    .analytics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('attendance.index') }}">Attendance</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Analytics</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Attendance Analytics</h1>
+    <div>
+        <a href="{{ url_for('attendance.report') }}" class="btn btn-success">
+            <i class="fas fa-file-export me-2"></i>Export Report
+        </a>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card mb-4">
+    <div class="card-header ">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+    </div>
+    <div class="card-body">
+        <form id="filter-form">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" id="date-range">
+                        <option value="current_month">Current Month</option>
+                        <option value="previous_month">Previous Month</option>
+                        <option value="current_term">Current Term</option>
+                        <option value="last_term">Previous Term</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Faculty/Department</label>
+                    <select class="form-select" id="department-filter">
+                        <option value="">All Departments</option>
+                        <option value="mathematics">Mathematics</option>
+                        <option value="science">Science</option>
+                        <option value="english">English</option>
+                        <option value="social_studies">Social Studies</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sync-alt me-2"></i>Update Analytics
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row custom-dates" style="display: none;">
+                <div class="col-md-6">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start-date">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end-date">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Key Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-4">
+        <div class="card analytics-card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Overall Attendance</h6>
+                        <div class="metric-value">87.5%</div>
+                    </div>
+                    <div class="display-4">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <p class="small mb-0 mt-3">
+                    <i class="fas fa-arrow-up text-success me-1"></i>
+                    <span>2.3% higher than previous period</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card analytics-card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Present Records</h6>
+                        <div class="metric-value">436</div>
+                    </div>
+                    <div class="display-4">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="progress  bg-opacity-25 mt-3" style="height: 6px;">
+                    <div class="progress-bar " role="progressbar" style="width: 82%;" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="small mb-0 mt-2">82% of total records</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card analytics-card bg-danger text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Absent Records</h6>
+                        <div class="metric-value">45</div>
+                    </div>
+                    <div class="display-4">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                </div>
+                <div class="progress  bg-opacity-25 mt-3" style="height: 6px;">
+                    <div class="progress-bar " role="progressbar" style="width: 8.5%;" aria-valuenow="8.5" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="small mb-0 mt-2">8.5% of total records</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card analytics-card bg-warning text-dark h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-dark text-opacity-75">Late/Excused</h6>
+                        <div class="metric-value">53</div>
+                    </div>
+                    <div class="display-4">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                </div>
+                <div class="progress bg-dark bg-opacity-10 mt-3" style="height: 6px;">
+                    <div class="progress-bar bg-dark bg-opacity-50" role="progressbar" style="width: 9.5%;" aria-valuenow="9.5" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="small mb-0 mt-2">9.5% of total records</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Attendance Distribution Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header ">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Attendance Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="attendanceDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance Trend Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header ">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Attendance Trend</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="attendanceTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Comparison and Top Units -->
+<div class="row">
+    <!-- Department Comparison Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header ">
+                <h5 class="mb-0"><i class="fas fa-building me-2"></i>Department Comparison</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="departmentComparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top/Bottom Teaching Units -->
+    <div class="col-lg-4 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header ">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top & Bottom Units</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item list-group-item-success d-flex justify-content-between align-items-center">
+                        <span class="fw-bold"><i class="fas fa-arrow-circle-up text-success me-2"></i>Advanced Mathematics</span>
+                        <span class="badge bg-success">98.2%</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-arrow-circle-up text-success me-2"></i>World Literature</span>
+                        <span class="badge bg-success">96.5%</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-arrow-circle-up text-success me-2"></i>Biology 101</span>
+                        <span class="badge bg-success">95.3%</span>
+                    </li>
+                    <li class="list-group-item  text-center text-muted">
+                        <small>• • •</small>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-arrow-circle-down text-danger me-2"></i>Psychology</span>
+                        <span class="badge bg-warning">78.2%</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-arrow-circle-down text-danger me-2"></i>Art History</span>
+                        <span class="badge bg-warning">76.3%</span>
+                    </li>
+                    <li class="list-group-item list-group-item-danger d-flex justify-content-between align-items-center">
+                        <span class="fw-bold"><i class="fas fa-arrow-circle-down text-danger me-2"></i>Computer Science</span>
+                        <span class="badge bg-danger">65.1%</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/attendance-charts.js') }}"></script>
+<script>
+$(document).ready(function() {
+    // Toggle custom date fields
+    $('#date-range').change(function() {
+        if ($(this).val() === 'custom') {
+            $('.custom-dates').slideDown();
+        } else {
+            $('.custom-dates').slideUp();
+        }
+    });
+
+    // Initialize charts
+    // Sample data - in a real app, this would come from an API
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const presentData = [78, 82, 75, 83, 86, 87];
+    const lateData = [8, 6, 10, 7, 5, 6];
+    const excusedData = [4, 3, 5, 2, 3, 2];
+    const absentData = [10, 9, 10, 8, 6, 5];
+    
+    // Initialize distribution chart
+    createAttendanceChart(
+        'attendanceDistributionChart',
+        months,
+        presentData,
+        lateData,
+        excusedData,
+        absentData
+    );
+    
+    // Initialize trend chart
+    createAttendanceTrendChart(
+        'attendanceTrendChart',
+        months,
+        [82, 85, 80, 88, 91, 92]
+    );
+    
+    // Initialize department comparison chart
+    createUnitComparisonChart(
+        'departmentComparisonChart',
+        ['Mathematics', 'Science', 'English', 'History', 'Arts', 'Physical Ed'],
+        [92, 88, 85, 79, 75, 90]
+    );
+    
+    // Handle form submission to refresh data
+    $('#filter-form').submit(function(e) {
+        e.preventDefault();
+        // Here you would normally make an AJAX call to get fresh data
+        // For demo, we'll just show a loading message
+        $('.chart-container').html('<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
+        // Simulate a delay then refresh with random data
+        setTimeout(function() {
+            // Reinitialize charts with new data
+            const newPresentData = presentData.map(val => Math.round(val + Math.random() * 10 - 5));
+            const newLateData = lateData.map(val => Math.round(val + Math.random() * 4 - 2));
+            const newExcusedData = excusedData.map(val => Math.round(val + Math.random() * 3 - 1.5));
+            const newAbsentData = absentData.map(val => Math.round(val + Math.random() * 5 - 2.5));
+            
+            createAttendanceChart(
+                'attendanceDistributionChart',
+                months,
+                newPresentData,
+                newLateData,
+                newExcusedData,
+                newAbsentData
+            );
+            
+            createAttendanceTrendChart(
+                'attendanceTrendChart',
+                months,
+                newPresentData.map((val, i) => val + (newLateData[i] * 0.75) + (newExcusedData[i] * 0.5))
+            );
+            
+            createUnitComparisonChart(
+                'departmentComparisonChart',
+                ['Mathematics', 'Science', 'English', 'History', 'Arts', 'Physical Ed'],
+                [92, 88, 85, 79, 75, 90].map(val => Math.round(val + Math.random() * 6 - 3))
+            );
+        }, 1500);
+    });
+});
+</script>
+{% endblock %}

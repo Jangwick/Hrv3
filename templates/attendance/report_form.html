@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Report{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <!-- Move breadcrumb inside the column for proper alignment -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('attendance.index') }}">Attendance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Generate Report</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Generate Attendance Report</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.employee.label }}</label>
+                            {{ form.employee(class="form-select") }}
+                            {% if form.employee.errors %}
+                                <div class="invalid-feedback d-block">
+                                {% for error in form.employee.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.unit.label }}</label>
+                            {{ form.unit(class="form-select") }}
+                            {% if form.unit.errors %}
+                                <div class="invalid-feedback d-block">
+                                {% for error in form.unit.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.date_range.label }}</label>
+                            {{ form.date_range(class="form-select") }}
+                            {% if form.date_range.errors %}
+                                <div class="invalid-feedback d-block">
+                                {% for error in form.date_range.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.start_date.label }}</label>
+                            {{ form.start_date(class="form-control", type="date") }}
+                            {% if form.start_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                {% for error in form.start_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.end_date.label }}</label>
+                            {{ form.end_date(class="form-control", type="date") }}
+                            {% if form.end_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                {% for error in form.end_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.format.label }}</label>
+                            {{ form.format(class="form-select") }}
+                            {% if form.format.errors %}
+                                <div class="invalid-feedback d-block">
+                                {% for error in form.format.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Report Information:</strong> Generate attendance reports to track faculty attendance for teaching assignments.
+                        You can filter by faculty member, specific teaching unit, and date range. Reports can be viewed online
+                        or exported to CSV/PDF formats for further analysis or record-keeping.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('attendance.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        const dateRangeSelect = $('#date_range');
+        const dateFields = $('#start_date, #end_date');
+        const dateFieldsContainer = dateFields.closest('.col-md-4');
+        
+        function toggleDateFields() {
+            if (dateRangeSelect.val() === 'custom') {
+                dateFieldsContainer.show();
+                dateFields.prop('required', true);
+            } else {
+                dateFieldsContainer.hide();
+                dateFields.prop('required', false);
+            }
+        }
+        
+        // Initial toggle
+        toggleDateFields();
+        
+        // Toggle on change
+        dateRangeSelect.change(toggleDateFields);
+    });
+</script>
+{% endblock %}

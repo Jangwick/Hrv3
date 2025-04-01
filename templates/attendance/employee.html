@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Attendance - {{ employee.get_display_name() }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('attendance.index') }}">Attendance</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ employee.get_display_name() }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Faculty Attendance</h1>
+        <h4 class="text-muted">{{ employee.get_display_name() }}</h4>
+    </div>
+    <div>
+        <a href="{{ url_for('attendance.generate_employee_report', employee_id=employee.id) }}" class="btn btn-primary">
+            <i class="fas fa-file-alt me-2"></i>Generate Report
+        </a>
+        <button type="button" class="btn btn-info" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print Page
+        </button>
+    </div>
+</div>
+
+<!-- Faculty Profile Card -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-2 text-center mb-3 mb-md-0">
+                {% if employee.profile.has_profile_image() %}
+                    <img src="{{ get_profile_image_url(employee.profile.profile_image, 120, 120, employee.profile.cloudinary_version) }}" 
+                         alt="Profile" class="rounded-circle img-thumbnail" style="width: 120px; height: 120px; object-fit: cover;">
+                {% else %}
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" 
+                         style="width: 120px; height: 120px;">
+                        <i class="fas fa-user fa-4x text-white"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h4>{{ employee.get_display_name() }}</h4>
+                <p class="mb-1"><i class="fas fa-user-tag me-2 text-primary"></i>{{ employee.profile.position or 'Faculty/Staff' }}</p>
+                <p class="mb-1"><i class="fas fa-building me-2 text-primary"></i>{{ employee.department.replace('_', ' ').title() }}</p>
+                <p class="mb-1"><i class="fas fa-envelope me-2 text-primary"></i>{{ employee.email }}</p>
+                <p><i class="fas fa-calendar-alt me-2 text-primary"></i>Hired: 
+                   {{ employee.profile.hire_date.strftime('%b %d, %Y') if employee.profile.hire_date else 'Not specified' }}
+                </p>
+            </div>
+            <div class="col-md-4">
+                {% set total_rate = namespace(value=0) %}
+                {% set count = namespace(value=0) %}
+                {% for unit_id, stats in attendance_stats.items() %}
+                    {% if stats.total > 0 %}
+                        {% set total_rate.value = total_rate.value + stats.rate %}
+                        {% set count.value = count.value + 1 %}
+                    {% endif %}
+                {% endfor %}
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-3">Overall Attendance Rate</h6>
+                        <div class="display-3 fw-bold">
+                            {{ "%.1f"|format(total_rate.value / count.value if count.value else 0) }}%
+                        </div>
+                        <div class="progress mt-3" style="height: 8px;">
+                            <div class="progress-bar {{ 'bg-success' if (total_rate.value / count.value if count.value else 0) >= 90 else 'bg-warning' if (total_rate.value / count.value if count.value else 0) >= 75 else 'bg-danger' }}" 
+                                style="width: {{ total_rate.value / count.value if count.value else 0 }}%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teaching Units with Attendance Stats -->
+<div class="row mb-4">
+    {% for unit in units %}
+    <div class="col-md-6 col-xl-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">{{ unit.title }}</h5>
+                <div class="text-muted small">{{ unit.code or 'No Code' }}</div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <p class="mb-1"><strong>Academic Term:</strong></p>
+                        <p>{{ unit.academic_term }}</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><strong>Status:</strong></p>
+                        <span class="badge {{ 'bg-success' if unit.status == 'active' else 'bg-secondary' }}">
+                            {{ unit.status.capitalize() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <p class="mb-1"><strong>Hours/Week:</strong></p>
+                        <p>{{ unit.hours_per_week }}</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><strong>Total Hours:</strong></p>
+                        <p>{{ unit.total_hours }}</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Attendance Statistics</h6>
+                {% if attendance_stats[unit.id].total > 0 %}
+                    <div class="text-center">
+                        <div class="display-6">{{ "%.1f"|format(attendance_stats[unit.id].rate) }}%</div>
+                        <div class="text-muted small mb-2">Attendance Rate</div>
+                        
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar {{ 'bg-success' if attendance_stats[unit.id].rate >= 90 else 'bg-warning' if attendance_stats[unit.id].rate >= 75 else 'bg-danger' }}" 
+                                style="width: {{ attendance_stats[unit.id].rate }}%">
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h5 mb-0">{{ attendance_stats[unit.id].present }}</div>
+                                <div class="text-muted small">Present</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="h5 mb-0">{{ attendance_stats[unit.id].total }}</div>
+                                <div class="text-muted small">Total Records</div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-info-circle text-muted fa-2x mb-2"></i>
+                        <p class="mb-0">No attendance records yet</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('teaching.link_unit', unit_id=unit.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View Unit
+                    </a>
+                    <a href="{{ url_for('teaching.record_attendance', unit_id=unit.id) }}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-plus me-1"></i>Record Attendance
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Recent Attendance Records -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Attendance Records</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_records %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Teaching Unit</th>
+                        <th>Status</th>
+                        <th>Hours</th>
+                        <th>Recorded By</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in recent_records %}
+                    <tr>
+                        <td>{{ record.date.strftime('%b %d, %Y') }}</td>
+                        <td>
+                            <strong>{{ record.teaching_unit.title }}</strong>
+                            {% if record.teaching_unit.code %}<div class="small text-muted">{{ record.teaching_unit.code }}</div>{% endif %}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if record.status == 'present' %}bg-success
+                                {% elif record.status == 'absent' %}bg-danger
+                                {% elif record.status == 'excused' %}bg-warning
+                                {% else %}bg-info{% endif %}">
+                                {{ record.status.capitalize() }}
+                            </span>
+                        </td>
+                        <td>{{ record.hours }}</td>
+                        <td>{{ record.recorder.username }}</td>
+                        <td>{{ record.notes|truncate(30) if record.notes else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="far fa-clipboard fa-3x text-muted mb-3"></i>
+            <h5>No Recent Attendance Records</h5>
+            <p class="text-muted">No attendance records available for this faculty member</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('attendance.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Attendance Dashboard
+    </a>
+</div>
+{% endblock %}

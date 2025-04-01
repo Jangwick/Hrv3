@@ -1,0 +1,23 @@
+/**
+ * Theme preload styles
+ * These styles are applied before page render to prevent theme flashing
+ */
+
+/* Transition styles for smoother theme changes after initial load */
+.theme-transition-ready {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.theme-transition-ready .card, 
+.theme-transition-ready .navbar, 
+.theme-transition-ready .btn, 
+.theme-transition-ready .form-control, 
+.theme-transition-ready .form-select, 
+.theme-transition-ready .modal, 
+.theme-transition-ready .table, 
+.theme-transition-ready .input-group-text,
+.theme-transition-ready .dropdown-menu, 
+.theme-transition-ready .alert, 
+.theme-transition-ready .badge {
+  transition: all 0.3s ease;
+}

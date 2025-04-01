@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-icon {
+        font-size: 2rem;
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover .stat-icon {
+        transform: scale(1.2);
+    }
+    .welcome-section {
+        background: var(--bs-primary-bg-subtle);
+        color: var(--bs-primary-text-emphasis);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .welcome-section {
+        background: var(--bs-primary);
+        color: white;
+    }
+    .role-badge {
+        font-size: 1rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 50px;
+    }
+    /* Enhanced icon styling */
+    .icon-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 45px;
+        height: 45px;
+        min-width: 45px; /* Prevent shrinking */
+        border-radius: 50%;
+        background-color: rgba(var(--bs-primary-rgb), 0.15);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        position: relative;
+        z-index: 2;
+    }
+    
+    .btn-outline-primary .icon-circle {
+        background-color: white;
+        color: var(--bs-primary);
+        border: 2px solid var(--bs-primary);
+    }
+    
+    .btn-outline-warning .icon-circle {
+        background-color: white;
+        color: var(--bs-warning);
+        border: 2px solid var(--bs-warning);
+    }
+    
+    .btn-outline-danger .icon-circle {
+        background-color: white;
+        color: var(--bs-danger);
+        border: 2px solid var(--bs-danger);
+    }
+    
+    .btn-outline-primary:hover .icon-circle {
+        background-color: white;
+        color: var(--bs-primary);
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn-outline-warning:hover .icon-circle {
+        background-color: white;
+        color: var(--bs-warning);
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn-outline-danger:hover .icon-circle {
+        background-color: white;
+        color: var(--bs-danger);
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .icon-circle i {
+        font-size: 1.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    /* Quick link buttons */
+    .quick-link {
+        padding: 0.75rem;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        border-width: 2px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .quick-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    }
+    
+    .quick-link:hover .icon-circle i {
+        transform: rotate(15deg);
+    }
+    
+    .quick-link:hover::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: currentColor;
+        opacity: 0.1;
+        z-index: 1;
+    }
+    
+    .quick-link span {
+        position: relative;
+        z-index: 2;
+    }
+    
+    /* Card icon container */
+    .icon-container {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    .stat-card:hover .icon-container {
+        transform: rotate(10deg);
+    }
+    /* Enhanced link styling */
+    .action-link {
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    .action-link i {
+        transition: transform 0.3s ease;
+    }
+    .action-link:hover i {
+        transform: translateX(3px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-section">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h3 mb-0">Welcome, {{ current_user.username }}!</h1>
+            <p class="lead mb-0">Here's your HR system dashboard overview</p>
+        </div>
+        <span class="role-badge badge {% if current_user.is_admin() %}bg-danger{% elif current_user.is_hr() %}bg-info{% else %}bg-secondary{% endif %}">
+            {{ current_user.role.replace('admin', 'Admin').replace('hr', 'HR') }}
+        </span>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <!-- Profile Card -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="text-body-secondary mb-1">Your Profile</h5>
+                        <h2 class="mb-0">{{ current_user.username }}</h2>
+                    </div>
+                    <div class="icon-container bg-primary">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                </div>
+                <hr>
+                <div class="mt-3">
+                    <p class="mb-2"><strong>Email:</strong> {{ current_user.email }}</p>
+                    <p class="mb-2"><strong>Department:</strong> {{ current_user.department }}</p>
+                    <p class="mb-2"><strong>Position:</strong> 
+                        {% if profile is defined %}
+                            {{ profile.position or "Not specified" }}
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </p>
+                    <p class="mb-2"><strong>Role:</strong> {{ current_user.role.replace('admin', 'Admin').replace('hr', 'HR') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leave Requests Card -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="text-muted mb-1">Leave Management</h5>
+                        <h2 class="mb-0">Time Off</h2>
+                    </div>
+                    <div class="icon-container bg-warning">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+                <hr>
+                <p class="mt-3">Request time off, view your leave history, and check request status.</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('leaves.index') }}" class="btn btn-warning">
+                        <i class="fas fa-calendar-alt me-1"></i> Manage Leave
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if current_user.is_admin() %}
+    <!-- Admin Stats -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="text-muted mb-1">Admin Dashboard</h5>
+                        <h2 class="mb-0">Full Access</h2>
+                    </div>
+                    <div class="icon-container bg-danger">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                </div>
+                <hr>
+                <p class="mt-3">As an administrator, you have access to manage all users, departments, and system settings.</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-danger">
+                        <i class="fas fa-cogs me-1"></i> Admin Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if current_user.is_hr() or current_user.is_admin() %}
+    <!-- HR Stats -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="text-muted mb-1">HR Management</h5>
+                        <h2 class="mb-0">Employee Access</h2>
+                    </div>
+                    <div class="icon-container bg-info">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                </div>
+                <hr>
+                <p class="mt-3">As an HR personnel, you can manage employee information and department details.</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('hr.dashboard') }}" class="btn btn-info text-white">
+                        <i class="fas fa-users me-1"></i> HR Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Training Programs Card -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="text-muted mb-1">Training Programs</h5>
+                        <h2 class="mb-0">Development</h5>
+                    </div>
+                    <div class="icon-container bg-info">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                </div>
+                <hr>
+                <p class="mt-3">Enhance your skills with company training programs and track your learning progress.</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('trainings.index') }}" class="btn btn-info text-white">
+                        <i class="fas fa-book me-1"></i> Browse Training
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Links Card -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="text-muted mb-1">Quick Links</h5>
+                        <h2 class="mb-0">Actions</h2>
+                    </div>
+                    <div class="icon-container bg-success">
+                        <i class="fas fa-link"></i>
+                    </div>
+                </div>
+                <hr>
+                <div class="mt-3">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('profile.index') }}" class="btn btn-outline-primary quick-link">
+                            <div class="icon-circle text-primary me-3">
+                                <i class="fas fa-user-edit"></i>
+                            </div>
+                            <span class="flex-grow-1">Edit Profile</span>
+                        </a>
+                        <a href="{{ url_for('leaves.index') }}" class="btn btn-outline-warning quick-link">
+                            <div class="icon-circle text-warning me-3">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <span class="flex-grow-1">Request Time Off</span>
+                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger quick-link">
+                            <div class="icon-circle text-danger me-3">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </div>
+                            <span class="flex-grow-1">Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <!-- First row of stat cards -->
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="card-title mb-0">Leave Requests</h5>
+                    <div class="icon-container bg-primary">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                </div>
+                <h2 class="mb-2">{{ leave_stats.pending|default(0) }}</h2>
+                <p class="text-muted mb-0">Pending requests</p>
+            </div>
+            <div class="card-footer p-2">
+                <a href="{{ url_for('leaves.index') }}" class="stretched-link action-link text-primary">
+                    View all leaves <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="card-title mb-0">Trainings</h5>
+                    <div class="icon-container bg-success">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                </div>
+                <h2 class="mb-2">{{ training_stats.upcoming|default(0) }}</h2>
+                <p class="text-muted mb-0">Available programs</p>
+            </div>
+            <div class="card-footer p-2">
+                <a href="{{ url_for('trainings.index') }}" class="stretched-link action-link text-success">
+                    View trainings <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="card-title mb-0">Teaching Units</h5>
+                    <div class="icon-container bg-info">
+                        <i class="fas fa-book"></i>
+                    </div>
+                </div>
+                <h2 class="mb-2">{{ teaching_stats.active|default(0) }}</h2>
+                <p class="text-muted mb-0">Active units</p>
+            </div>
+            <div class="card-footer p-2">
+                <a href="{{ url_for('teaching.index') }}" class="stretched-link action-link text-info">
+                    View units <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="card-title mb-0">Attendance</h5>
+                    <div class="icon-container bg-warning">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                </div>
+                <h2 class="mb-2">{{ attendance_stats.rate|default(0) }}%</h2>
+                <p class="text-muted mb-0">Overall attendance rate</p>
+            </div>
+            <div class="card-footer p-2">
+                <a href="{{ url_for('attendance.index') }}" class="stretched-link action-link text-warning">
+                    View attendance <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Timeline -->
+<div class="card mt-4">
+    <div class="card-header ">
+        <h5 class="mb-0"><i class="fas fa-history me-2 text-primary"></i>Recent Activity</h5>
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            {% for activity in recent_activities %}
+            <div class="timeline-item">
+                <i class="fas fa-circle text-primary"></i>
+                <div class="ms-3">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ activity.title }}</h6>
+                        <small class="text-body-secondary">{{ activity.time }}</small>
+                    </div>
+                    <p class="mb-1 text-body-secondary">{{ activity.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Summary Section -->
+<div class="card mt-4">
+    <div class="card-header ">
+        <h5 class="mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Attendance Overview</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="chart-container" style="position: relative; height:250px;">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h6 class="border-bottom pb-2">My Units</h6>
+                <div class="list-group list-group-flush">
+                    {% if teaching_units %}
+                        {% for unit in teaching_units[:3] %}
+                        <a href="{{ url_for('teaching.view', unit_id=unit.id) }}" class="list-group-item list-group-item-action px-0">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ unit.title }}</h6>
+                                <span class="badge {{ 'bg-success' if unit.attendance_rate >= 80 else 'bg-warning' }}">
+                                    {{ "%.1f"|format(unit.attendance_rate) }}%
+                                </span>
+                            </div>
+                            <div class="progress" style="height: 5px">
+                                <div class="progress-bar {{ 'bg-success' if unit.attendance_rate >= 80 else 'bg-warning' }}" 
+                                     role="progressbar" style="width: {{ unit.attendance_rate }}%"></div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                        {% if teaching_units|length > 3 %}
+                            <a href="{{ url_for('teaching.index') }}" class="list-group-item list-group-item-action px-0 text-center text-primary">
+                                View all {{ teaching_units|length }} units
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">No teaching units assigned.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Attendance chart initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        
+        // Use real data from the server instead of placeholder data
+        const chartData = {
+            labels: {{ chart_data.labels|tojson }},
+            datasets: [{
+                label: 'Attendance Rate (%)',
+                data: {{ chart_data.attendance_rates|tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        };
+        
+        const config = {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Attendance Rate (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Rate: ${context.raw}%`;
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Weekly Attendance Trend'
+                    }
+                }
+            }
+        };
+        
+        new Chart(ctx, config);
+    });
+</script>
+{% endblock %}

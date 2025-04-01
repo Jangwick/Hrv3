@@ -1,0 +1,31 @@
+# Flask and extensions
+flask
+flask-login
+flask-sqlalchemy
+flask-wtf
+flask-mail
+wtforms
+argon2-cffi
+email-validator
+python-dotenv
+werkzeug
+
+# Add Flask-WTF if not already present
+Flask-WTF>=1.1.1
+
+# Database
+sqlalchemy
+
+# Image handling
+cloudinary
+Pillow
+
+# PDF generation
+reportlab
+
+# Google Generative AI
+google-genai
+
+# Server
+gunicorn
+pandas

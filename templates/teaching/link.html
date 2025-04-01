@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Link Teaching Units - {{ unit.title }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('teaching.index') }}">Teaching Units</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('teaching.view', unit_id=unit.id) }}">{{ unit.title }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Link Units</li>
+    </ol>
+</nav>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Link Teaching Units</h4>
+    </div>
+    <div class="card-body">
+        <h5>{{ unit.title }}</h5>
+        <p class="text-muted">Select a teaching unit to link to this unit and specify the relationship type.</p>
+        
+        <form method="POST" action="{{ url_for('teaching.link_unit', unit_id=unit.id) }}">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="target_unit_id" class="form-label">Teaching Unit</label>
+                    <select name="target_unit_id" id="target_unit_id" class="form-select" required>
+                        <option value="">Select Teaching Unit</option>
+                        {% for available_unit in available_units %}
+                            <option value="{{ available_unit.id }}">{{ available_unit.title }} ({{ available_unit.code or 'No code' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="relationship_type" class="form-label">Relationship Type</label>
+                    <select name="relationship_type" id="relationship_type" class="form-select" required>
+                        <option value="prerequisite">Prerequisite</option>
+                        <option value="corequisite">Co-requisite</option>
+                        <option value="related" selected>Related</option>
+                        <option value="continuation">Continuation</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Note:</strong> Linking teaching units helps create a structured curriculum and assists with scheduling and planning.
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('teaching.view', unit_id=unit.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Unit
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-link me-2"></i>Link Units
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

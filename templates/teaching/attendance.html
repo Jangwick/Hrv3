@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+
+{% block title %}Record Attendance - {{ unit.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* Enhanced styling for attendance recording */
+    .attendance-status-selector {
+        margin-bottom: 1.5rem;
+    }
+    
+    .status-option {
+        position: relative;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 2px solid transparent;
+    }
+    
+    .status-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Status colors */
+    .status-present {
+        border-left: 6px solid #28a745;
+    }
+    
+    .status-late {
+        border-left: 6px solid #007bff;
+    }
+    
+    .status-excused {
+        border-left: 6px solid #ffc107;
+    }
+    
+    .status-absent {
+        border-left: 6px solid #dc3545;
+    }
+    
+    /* Selected state */
+    .status-option.selected {
+        border-color: #007bff;
+        background-color: rgba(0,123,255,0.05);
+    }
+    
+    .status-present.selected {
+        border-color: #28a745;
+        background-color: rgba(40,167,69,0.05);
+    }
+    
+    .status-late.selected {
+        border-color: #007bff;
+        background-color: rgba(0,123,255,0.05);
+    }
+    
+    .status-excused.selected {
+        border-color: #ffc107;
+        background-color: rgba(255,193,7,0.05);
+    }
+    
+    .status-absent.selected {
+        border-color: #dc3545;
+        background-color: rgba(220,53,69,0.05);
+    }
+    
+    /* Hide actual radio inputs */
+    .status-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+    
+    .status-icon {
+        font-size: 1.75rem;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+    
+    .status-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Extra animations */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .status-option.selected .status-icon {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    /* Unit info card */
+    .unit-info-card {
+        border-left: 4px solid #007bff;
+    }
+    
+    /* Date and hours section */
+    .input-with-icon {
+        position: relative;
+    }
+    
+    .input-with-icon i {
+        position: absolute;
+        left: 10px;
+        top: 13px;
+        color: #6c757d;
+    }
+    
+    .input-with-icon input {
+        padding-left: 35px;
+    }
+    
+    /* Form section styling - Updated to respect theme */
+    .form-section {
+        padding: 1.5rem;
+        background-color: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(var(--bs-body-color-rgb), 0.075);
+        transition: all 0.3s ease;
+    }
+    
+    .form-section:hover {
+        box-shadow: 0 0.5rem 1rem rgba(var(--bs-body-color-rgb), 0.15);
+    }
+    
+    .form-section-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        color: var(--bs-body-color);
+        font-weight: 600;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    
+    .form-section-title i {
+        margin-right: 0.5rem;
+        color: var(--bs-primary);
+    }
+    
+    /* Success animation */
+    @keyframes slideDown {
+        0% { transform: translateY(-20px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+    
+    .success-feedback {
+        animation: slideDown 0.5s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('teaching.index') }}">Teaching Units</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('teaching.view', unit_id=unit.id) }}">{{ unit.title }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Record Attendance</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Record Attendance</h1>
+</div>
+
+<div class="row">
+    <!-- Unit Information Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card unit-info-card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Unit Information</h5>
+            </div>
+            <div class="card-body">
+                <h4>{{ unit.title }}</h4>
+                <p class="text-muted mb-3">{{ unit.code or 'No code' }}</p>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Academic Term:</span>
+                    <span class="fw-bold">{{ unit.academic_term }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Faculty:</span>
+                    <span class="fw-bold">{{ unit.employee.get_display_name() }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Status:</span>
+                    <span class="badge {{ 'bg-success' if unit.status == 'active' else 'bg-secondary' }}">
+                        {{ unit.status.capitalize() }}
+                    </span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Duration:</span>
+                    <span class="fw-bold">{{ unit.start_date.strftime('%b %d') }} - {{ unit.end_date.strftime('%b %d, %Y') }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Hours Per Week:</span>
+                    <span class="fw-bold">{{ unit.hours_per_week }}</span>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <div class="h4 mb-0">{{ "%.1f"|format(unit.attendance_rate) }}%</div>
+                    <div class="text-muted">Current Attendance Rate</div>
+                    
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar {{ 'bg-success' if unit.attendance_rate >= 80 else 'bg-warning' }}" 
+                             role="progressbar" 
+                             style="width: {{ unit.attendance_rate }}%;" 
+                             aria-valuenow="{{ unit.attendance_rate }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance Recording Form -->
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Record New Attendance
+                </h5>
+                <!-- Replace the datetime.now() call with a variable from the server side -->
+                <span class="badge  text-dark ms-auto">Current Date</span>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="attendanceForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Date and Hours Section -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-calendar-alt"></i>Date & Hours
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.date.label }}</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-calendar"></i>
+                                    {{ form.date(class="form-control datepicker", autocomplete="off") }}
+                                </div>
+                                {% if form.date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.hours.label }}</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-clock"></i>
+                                    {{ form.hours(class="form-control", placeholder="Enter hours (0.5-12)") }}
+                                </div>
+                                {% if form.hours.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.hours.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Recommended: {{ unit.hours_per_week / 5 }} hours per session</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Replace the status selection section with this completely redesigned version -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-user-check"></i>Attendance Status
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <!-- Important: Use standard radio buttons with visible inputs -->
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <span>Please select an attendance status below. This affects payment calculations.</span>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check card p-3 border-success">
+                                        <input class="form-check-input" type="radio" name="status" id="status_present" value="present" checked>
+                                        <label class="form-check-label w-100" for="status_present">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-check-circle text-success me-2 fs-4"></i>
+                                                <div>
+                                                    <strong>Present</strong>
+                                                    <div class="text-muted small">Faculty fully attended (100% payment)</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check card p-3 border-primary">
+                                        <input class="form-check-input" type="radio" name="status" id="status_late" value="late">
+                                        <label class="form-check-label w-100" for="status_late">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-clock text-primary me-2 fs-4"></i>
+                                                <div>
+                                                    <strong>Late Arrival</strong>
+                                                    <div class="text-muted small">Faculty arrived late (75% payment)</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check card p-3 border-warning">
+                                        <input class="form-check-input" type="radio" name="status" id="status_excused" value="excused">
+                                        <label class="form-check-label w-100" for="status_excused">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-exclamation-circle text-warning me-2 fs-4"></i>
+                                                <div>
+                                                    <strong>Excused Absence</strong>
+                                                    <div class="text-muted small">Absence with prior notice (50% payment)</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check card p-3 border-danger">
+                                        <input class="form-check-input" type="radio" name="status" id="status_absent" value="absent">
+                                        <label class="form-check-label w-100" for="status_absent">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-times-circle text-danger me-2 fs-4"></i>
+                                                <div>
+                                                    <strong>Absent</strong>
+                                                    <div class="text-muted small">Unexcused absence (0% payment)</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Display errors for status field if any -->
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Notes Section -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-sticky-note"></i>Additional Notes
+                        </h5>
+                        <div class="mb-3">
+                            {{ form.notes(class="form-control", rows=3, placeholder="Add any relevant details, comments or observations...") }}
+                            <div class="form-text">Optional: Add context or explanation about this attendance record</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Section -->
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Attendance Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Date:</strong> <span id="previewDate">{{ datetime.now().strftime('%b %d, %Y') }}</span></p>
+                                    <p><strong>Hours:</strong> <span id="previewHours">{{ unit.hours_per_week / 5 }}</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Status:</strong> <span id="previewStatus" class="badge bg-success">Present</span></p>
+                                    <p><strong>Faculty:</strong> {{ unit.employee.get_display_name() }}</p>
+                                </div>
+                            </div>
+                            <div class="mb-0">
+                                <strong>Notes:</strong> <span id="previewNotes" class="text-muted fst-italic">No notes provided</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('teaching.view', unit_id=unit.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Unit Details
+                        </a>
+                        <div>
+                            <button type="reset" class="btn btn-outline-secondary me-2">
+                                Clear Form
+                            </button>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Tips Card -->
+        <div class="card mt-3">
+            <div class="card-header ">
+                <h5 class="mb-0"><i class="fas fa-lightbulb text-warning me-2"></i>Quick Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Record attendance as soon as possible after each class.</li>
+                    <li>Be consistent with your hours calculation for accurate payroll processing.</li>
+                    <li>For excused absences, include the reason in the notes section.</li>
+                    <li>Check the unit's attendance rate regularly to ensure accurate reporting.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+$(document).ready(function() {
+    // Initialize date picker
+    $(".datepicker").flatpickr({
+        dateFormat: "Y-m-d",
+        defaultDate: new Date(),
+        maxDate: "today",
+        disableMobile: "true"
+    });
+    
+    // Direct event handler for radio buttons
+    $('input[name="status"]').change(function() {
+        const status = $(this).val();
+        console.log("Status selected:", status);
+        
+        // Update the payment impact text
+        updatePaymentImpact(status);
+        
+        // Update the status preview
+        updateStatusPreview(status);
+    });
+    
+    // Function to update payment impact text
+    function updatePaymentImpact(status) {
+        switch(status) {
+            case 'present':
+                $('#paymentImpact').text('Present status = 100% payment rate');
+                break;
+            case 'late':
+                $('#paymentImpact').text('Late arrival = 75% payment rate');
+                break;
+            case 'excused':
+                $('#paymentImpact').text('Excused absence = 50% payment rate');
+                break;
+            case 'absent':
+                $('#paymentImpact').text('Unexcused absence = 0% payment rate');
+                break;
+        }
+    }
+    
+    // Function to update status preview
+    function updateStatusPreview(status) {
+        let badgeClass = '';
+        let statusText = '';
+        
+        switch(status) {
+            case 'present':
+                badgeClass = 'bg-success';
+                statusText = 'Present';
+                break;
+            case 'late':
+                badgeClass = 'bg-primary';
+                statusText = 'Late Arrival';
+                break;
+            case 'excused':
+                badgeClass = 'bg-warning';
+                statusText = 'Excused Absence';
+                break;
+            case 'absent':
+                badgeClass = 'bg-danger';
+                statusText = 'Absent';
+                break;
+        }
+        
+        $('#previewStatus')
+            .removeClass('bg-success bg-primary bg-warning bg-danger')
+            .addClass(badgeClass)
+            .text(statusText);
+    }
+    
+    // Form validation - ensure we log the selected status on submit
+    $('#attendanceForm').submit(function(e) {
+        const selectedStatus = $('input[name="status"]:checked').val();
+        console.log("Form submitting with status:", selectedStatus);
+        
+        if (!selectedStatus) {
+            e.preventDefault();
+            alert('Please select an attendance status.');
+            return false;
+        }
+    });
+    
+    // Rest of your existing form logic (date, hours, notes)
+    // ...existing code...
+    
+    // Reset button logic
+    $('button[type="reset"]').click(function() {
+        // Reset status to present
+        $('#status_present').prop('checked', true);
+        
+        // Update previews
+        updatePaymentImpact('present');
+        updateStatusPreview('present');
+        
+        // ...existing reset code...
+    });
+});
+</script>
+{% endblock %}

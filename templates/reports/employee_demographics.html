@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Demographics Report{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .report-card {
+        transition: all 0.3s ease;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stats-header {
+        padding: 1.5rem;
+        color: white;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(45deg, #1cc88a, #13855c);
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(45deg, #36b9cc, #258391);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(45deg, #f6c23e, #dda20a);
+    }
+    
+    .department-indicator {
+        width: 15px;
+        height: 15px;
+        display: inline-block;
+        margin-right: 8px;
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Employee Demographics</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-users me-2"></i>Employee Demographics</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exportModal">
+            <i class="fas fa-download me-2"></i>Export Report
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="printReport">
+            <i class="fas fa-print me-2"></i>Print Report
+        </button>
+    </div>
+</div>
+
+<!-- Report Controls -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Report Settings</h5>
+    </div>
+    <div class="card-body">
+        <form id="reportFilterForm" method="GET" action="{{ url_for('reports.employee_demographics') }}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Department</label>
+                    <select name="department" class="form-select">
+                        <option value="">All Departments</option>
+                        <option value="administration">Administration</option>
+                        <option value="teaching">Teaching</option>
+                        <option value="research">Research</option>
+                        <option value="it">IT</option>
+                        <option value="hr">HR</option>
+                        <option value="finance">Finance</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date Range</label>
+                    <select name="date_range" class="form-select">
+                        <option value="all_time">All Time</option>
+                        <option value="current_year">Current Year</option>
+                        <option value="last_year">Last Year</option>
+                        <option value="last_5_years">Last 5 Years</option>
+                        <option value="custom">Custom Date Range</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Group By</label>
+                    <select name="group_by" class="form-select">
+                        <option value="department">Department</option>
+                        <option value="position">Position</option>
+                        <option value="hire_year">Hire Year</option>
+                        <option value="education">Education Level</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6 date-range-inputs" style="display: none;">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control">
+                </div>
+                <div class="col-md-6 date-range-inputs" style="display: none;">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control">
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Generate Report
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="resetFilters">
+                        <i class="fas fa-undo me-2"></i>Reset Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <!-- Total Employees -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Total Employees</h6>
+                        <h2 class="mb-0 text-white">{{ employee_count }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-users fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-1">Current Active: <strong>{{ active_employee_count }}</strong></p>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-primary" style="width: {{ (active_employee_count / employee_count * 100) if employee_count > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Average Tenure -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Average Tenure</h6>
+                        <h2 class="mb-0 text-white">{{ avg_tenure|default(0)|round(1) }} Years</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-clock fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-1">
+                    Longest: <strong>{{ max_tenure|default(0)|round(1) }} Years</strong> 
+                    <span class="text-muted">({{ longest_tenured_employee }})</span>
+                </p>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: {{ (avg_tenure / max_tenure * 100) if max_tenure > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Department Diversity -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Departments</h6>
+                        <h2 class="mb-0 text-white">{{ department_count }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-building fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-1">Largest: <strong>{{ largest_department_name }} ({{ largest_department_count }})</strong></p>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-info" style="width: {{ (largest_department_count / employee_count * 100) if employee_count > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Education Levels -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Education</h6>
+                        <h2 class="mb-0 text-white">{{ education_count }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-graduation-cap fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-1">Highest: <strong>{{ highest_degree }} ({{ highest_degree_count }})</strong></p>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-warning" style="width: {{ (highest_degree_count / employee_count * 100) if employee_count > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <!-- Department Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Department Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="departmentChart"></canvas>
+                </div>
+                <div class="mt-3 d-flex flex-wrap justify-content-center">
+                    {% for dept in departments %}
+                    <div class="me-3 mb-2">
+                        <span class="department-indicator" style="background-color: {{ dept.color }};"></span>
+                        {{ dept.name.replace('_', ' ').title() }} ({{ dept.count }})
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tenure Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Tenure Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="tenureChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Education Level -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Education Levels</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="educationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hire Trends -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Hiring Trends by Year</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="hireTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Employee Table -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Employee Details</h5>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#employeeTableCollapse">
+            <i class="fas fa-table me-1"></i>Toggle Table View
+        </button>
+    </div>
+    <div class="collapse" id="employeeTableCollapse">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Position</th>
+                            <th>Hire Date</th>
+                            <th>Tenure (Years)</th>
+                            <th>Education</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr>
+                            <td>{{ employee.name }}</td>
+                            <td>{{ employee.department.replace('_', ' ').title() }}</td>
+                            <td>{{ employee.position }}</td>
+                            <td>{{ employee.hire_date }}</td>
+                            <td>{{ employee.tenure|round(1) }}</td>
+                            <td>{{ employee.education }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Export Format</label>
+                        <select class="form-select" name="format">
+                            <option value="pdf">PDF Document</option>
+                            <option value="csv">CSV Spreadsheet</option>
+                            <option value="excel">Excel Spreadsheet</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Include</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" checked name="include_charts" id="includeCharts">
+                            <label class="form-check-label" for="includeCharts">
+                                Include Charts and Visualizations
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" checked name="include_table" id="includeTable">
+                            <label class="form-check-label" for="includeTable">
+                                Include Detailed Employee Table
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="exportButton">
+                    <i class="fas fa-download me-2"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts with sample data
+        // Department Chart
+        const deptCtx = document.getElementById('departmentChart').getContext('2d');
+        const departmentChart = new Chart(deptCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ departments|map(attribute='name')|map('replace', '_', ' ')|map('title')|list|tojson }},
+                datasets: [{
+                    data: {{ departments|map(attribute='count')|list|tojson }},
+                    backgroundColor: {{ departments|map(attribute='color')|list|tojson }}
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Tenure Chart
+        const tenureCtx = document.getElementById('tenureChart').getContext('2d');
+        const tenureChart = new Chart(tenureCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ tenure_ranges|tojson }},
+                datasets: [{
+                    label: 'Number of Employees',
+                    data: {{ tenure_counts|tojson }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Education Chart
+        const eduCtx = document.getElementById('educationChart').getContext('2d');
+        const educationChart = new Chart(eduCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ education_levels|map(attribute='name')|map('replace', '_', ' ')|map('title')|list|tojson }},
+                datasets: [{
+                    data: {{ education_levels|map(attribute='count')|list|tojson }},
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+        
+        // Hire Trend Chart
+        const hireCtx = document.getElementById('hireTrendChart').getContext('2d');
+        const hireTrendChart = new Chart(hireCtx, {
+            type: 'line',
+            data: {
+                labels: {{ hire_years|tojson }},
+                datasets: [{
+                    label: 'New Hires',
+                    data: {{ hire_counts|tojson }},
+                    fill: false,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Form controls
+        const dateRangeSelect = document.querySelector('select[name="date_range"]');
+        const dateRangeInputs = document.querySelectorAll('.date-range-inputs');
+        
+        dateRangeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                dateRangeInputs.forEach(input => {
+                    input.style.display = 'block';
+                });
+            } else {
+                dateRangeInputs.forEach(input => {
+                    input.style.display = 'none';
+                });
+            }
+        });
+        
+        // Reset filters button
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            document.getElementById('reportFilterForm').reset();
+            dateRangeInputs.forEach(input => {
+                input.style.display = 'none';
+            });
+        });
+        
+        // Print report button
+        document.getElementById('printReport').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Export button handler - Fixed version
+        document.getElementById('exportButton').addEventListener('click', function() {
+            // Get form data
+            const form = document.getElementById('exportForm');
+            const formData = new FormData(form);
+            
+            // Get export format and options
+            const format = formData.get('format');
+            const includeCharts = formData.has('include_charts') ? 'true' : 'false';
+            const includeTable = formData.has('include_table') ? 'true' : 'false';
+            
+            // Get current URL parameters for filters
+            const currentParams = new URLSearchParams(window.location.search);
+            
+            // Create URL for export
+            const exportParams = new URLSearchParams();
+            
+            // Add current filters if they exist
+            for (const [key, value] of currentParams.entries()) {
+                if (key !== 'export_format' && key !== 'include_charts' && key !== 'include_table') {
+                    exportParams.append(key, value);
+                }
+            }
+            
+            // Add export parameters
+            exportParams.append('export_format', format);
+            exportParams.append('include_charts', includeCharts);
+            exportParams.append('include_table', includeTable);
+            
+            // Create the URL and navigate to it
+            const exportUrl = `${window.location.pathname}?${exportParams.toString()}`;
+            window.location.href = exportUrl;
+            
+            // Close the modal
+            const exportModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('exportModal'));
+            exportModal.hide();
+        });
+    });
+</script>
+{% endblock %}

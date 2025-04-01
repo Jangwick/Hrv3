@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feature-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    .card-counter {
+        padding: 20px 15px;
+        background: linear-gradient(45deg, #5C6BC0, #3949AB);
+        color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .card-counter.success {
+        background: linear-gradient(45deg, #66BB6A, #43A047);
+    }
+    .card-counter.danger {
+        background: linear-gradient(45deg, #EF5350, #E53935);
+    }
+    .card-counter.warning {
+        background: linear-gradient(45deg, #FFCA28, #FFB300);
+    }
+    .card-counter i {
+        font-size: 4rem;
+        opacity: 0.3;
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    .quick-action-btn {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .quick-action-btn:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+    }
+    .attendance-record {
+        border-left: 4px solid transparent;
+    }
+    .attendance-record.present {
+        border-left-color: #28a745;
+    }
+    .attendance-record.absent {
+        border-left-color: #dc3545;
+    }
+    .attendance-record.late {
+        border-left-color: #007bff;
+    }
+    .attendance-record.excused {
+        border-left-color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Attendance Management</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">Attendance Management</h1>
+        <p class="text-muted">Track, record, and analyze attendance records</p>
+    </div>
+    <div>
+        {% if current_user.is_hr() or current_user.is_admin() %}
+        <a href="{{ url_for('attendance.report') }}" class="btn btn-success me-2">
+            <i class="fas fa-file-export me-2"></i>Generate Report
+        </a>
+        {% endif %}
+        <a href="{{ url_for('teaching.index') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Record New Attendance
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-4 mb-md-0">
+        <div class="card-counter">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="stat-number">{{ stats.overall_rate|default("N/A") }}%</h3>
+                    <div>Overall Attendance</div>
+                </div>
+                <i class="fas fa-chart-line"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4 mb-md-0">
+        <div class="card-counter success">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="stat-number">{{ stats.present_count|default("N/A") }}</h3>
+                    <div>Present Records</div>
+                </div>
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4 mb-md-0">
+        <div class="card-counter warning">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="stat-number">{{ stats.total_hours|default("N/A") }}</h3>
+                    <div>Total Hours</div>
+                </div>
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-counter danger">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="stat-number">{{ stats.absence_count|default("N/A") }}</h3>
+                    <div>Absences</div>
+                </div>
+                <i class="fas fa-times-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <a href="{{ url_for('teaching.index') }}" class="d-block text-decoration-none text-center quick-action-btn p-3">
+                    <i class="fas fa-calendar-plus fa-2x text-primary mb-2"></i>
+                    <h6 class="mb-0">Record Attendance</h6>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <a href="{{ url_for('attendance.dashboard') }}" class="d-block text-decoration-none text-center quick-action-btn p-3">
+                    <i class="fas fa-tachometer-alt fa-2x text-success mb-2"></i>
+                    <h6 class="mb-0">Dashboard</h6>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <a href="{{ url_for('attendance.analytics') }}" class="d-block text-decoration-none text-center quick-action-btn p-3">
+                    <i class="fas fa-chart-pie fa-2x text-info mb-2"></i>
+                    <h6 class="mb-0">Analytics</h6>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <a href="{{ url_for('attendance.report') }}" class="d-block text-decoration-none text-center quick-action-btn p-3">
+                    <i class="fas fa-file-alt fa-2x text-warning mb-2"></i>
+                    <h6 class="mb-0">Reports</h6>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Teaching Units -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-book me-2"></i>My Teaching Units</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if teaching_units %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="">
+                    <tr>
+                        <th>Unit Title</th>
+                        <th>Academic Term</th>
+                        <th>Status</th>
+                        <th>Attendance Rate</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for unit in teaching_units %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ unit.title }}</div>
+                            <div class="text-muted small">{{ unit.code or 'No Code' }}</div>
+                        </td>
+                        <td>{{ unit.academic_term }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if unit.status == 'active' else 'bg-secondary' }}">
+                                {{ unit.status.capitalize() }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                    <div class="progress-bar {{ 'bg-success' if unit.attendance_rate >= 80 else 'bg-warning' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ unit.attendance_rate }}%;"
+                                         aria-valuenow="{{ unit.attendance_rate }}"
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <span class="fw-bold small">{{ "%.1f"|format(unit.attendance_rate) }}%</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('teaching.view', unit_id=unit.id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>Details
+                                </a>
+                                <a href="{{ url_for('teaching.record_attendance', unit_id=unit.id) }}" class="btn btn-outline-success">
+                                    <i class="fas fa-plus me-1"></i>Record
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+            <h5>No Teaching Units Found</h5>
+            <p class="text-muted mb-4">You don't have any teaching units assigned.</p>
+            {% if current_user.is_hr() or current_user.is_admin() %}
+            <a href="{{ url_for('teaching.new') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Teaching Unit
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Attendance Records -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Attendance</h5>
+        <a href="{{ url_for('attendance.dashboard') }}" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_attendance %}
+        <div class="list-group list-group-flush">
+            {% for record in recent_attendance %}
+            <div class="list-group-item attendance-record {{ record.status }}">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        <strong>{{ record.date.strftime('%b %d, %Y') }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        {{ record.teaching_unit.title }}
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge 
+                            {% if record.status == 'present' %}bg-success
+                            {% elif record.status == 'absent' %}bg-danger
+                            {% elif record.status == 'excused' %}bg-warning
+                            {% else %}bg-info{% endif %}">
+                            {{ record.status.capitalize() }}
+                        </span>
+                    </div>
+                    <div class="col-md-2">
+                        {{ record.hours }} hours
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <a href="{{ url_for('teaching.view', unit_id=record.teaching_unit_id) }}" class="btn btn-sm btn-link">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <p class="text-muted mb-0">No recent attendance records found</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Feature Cards -->
+<div class="row mt-4">
+    <div class="col-md-4 mb-4">
+        <div class="card feature-card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-primary">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h5 class="card-title">Attendance Analytics</h5>
+                <p class="card-text">Detailed analytics and insights into attendance patterns and trends.</p>
+                <a href="{{ url_for('attendance.analytics') }}" class="btn btn-outline-primary mt-2">View Analytics</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card feature-card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-success">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h5 class="card-title">Attendance Reports</h5>
+                <p class="card-text">Generate comprehensive reports for individual or departmental attendance.</p>
+                <a href="{{ url_for('attendance.report') }}" class="btn btn-outline-success mt-2">Generate Reports</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card feature-card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-warning">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h5 class="card-title">Settings & Preferences</h5>
+                <p class="card-text">Configure attendance settings and notification preferences.</p>
+                <a href="{{ url_for('attendance_settings') }}" class="btn btn-outline-warning mt-2">Configure</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+});
+</script>
+{% endblock %}

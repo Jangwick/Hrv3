@@ -1,0 +1,618 @@
+{% extends "base.html" %}
+
+{% block title %}Training Analytics Report{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stats-header {
+        padding: 1.5rem;
+        color: white;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(45deg, #1cc88a, #13855c);
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(45deg, #36b9cc, #258391);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(45deg, #f6c23e, #dda20a);
+    }
+    
+    .category-indicator {
+        width: 15px;
+        height: 15px;
+        display: inline-block;
+        margin-right: 8px;
+        border-radius: 50%;
+    }
+    
+    .rating-star {
+        color: #ffc107;
+        font-size: 1.25rem;
+    }
+    
+    .rating-empty {
+        color: #e0e0e0;
+        font-size: 1.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Training Analytics</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-graduation-cap me-2"></i>Training Analytics</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exportModal">
+            <i class="fas fa-download me-2"></i>Export Report
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="printReport">
+            <i class="fas fa-print me-2"></i>Print Report
+        </button>
+    </div>
+</div>
+
+<!-- Report Controls -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Report Settings</h5>
+    </div>
+    <div class="card-body">
+        <form id="reportFilterForm" method="GET" action="{{ url_for('reports.training_analytics') }}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Department</label>
+                    <select name="department" class="form-select">
+                        <option value="">All Departments</option>
+                        <option value="administration">Administration</option>
+                        <option value="teaching">Teaching</option>
+                        <option value="research">Research</option>
+                        <option value="it">IT</option>
+                        <option value="hr">HR</option>
+                        <option value="finance">Finance</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Time Period</label>
+                    <select name="time_period" class="form-select">
+                        <option value="all">All Time</option>
+                        <option value="current_year">Current Year</option>
+                        <option value="last_year">Last Year</option>
+                        <option value="last_6_months">Last 6 Months</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Training Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for category in available_categories %}
+                        <option value="{{ category }}">{{ category.replace('_', ' ').title() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Generate Report
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="resetFilters">
+                        <i class="fas fa-undo me-2"></i>Reset Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <!-- Total Programs -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Total Programs</h6>
+                        <h2 class="mb-0 text-white">{{ total_programs }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-chalkboard-teacher fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <small class="text-muted d-block">Completed</small>
+                        <span class="fw-bold">{{ completed_programs }}</span>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Active</small>
+                        <span class="fw-bold">{{ active_programs }}</span>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Upcoming</small>
+                        <span class="fw-bold">{{ upcoming_programs }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Enrollment Rate -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Enrollment Rate</h6>
+                        <h2 class="mb-0 text-white">{{ "%.1f"|format(enrollment_rate) }}%</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-user-plus fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-1 text-center">
+                    {{ total_enrollments }} enrollments out of {{ total_capacity }} available spots
+                </p>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: {{ enrollment_rate }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completion Rate -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Completion Rate</h6>
+                        <h2 class="mb-0 text-white">{{ "%.1f"|format(completion_rate) }}%</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-1 text-center">
+                    {{ total_completions }} completions out of {{ total_enrollments }} enrollments
+                </p>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-info" style="width: {{ completion_rate }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Average Rating -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card">
+            <div class="stats-header bg-gradient-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white mb-1">Average Rating</h6>
+                        <h2 class="mb-0 text-white">{{ "%.1f"|format(avg_rating) }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-star fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body text-center">
+                <div>
+                    {% for i in range(1, 6) %}
+                        {% if i <= avg_rating|round(0, 'floor') %}
+                            <i class="fas fa-star rating-star"></i>
+                        {% elif i <= avg_rating|round(0, 'ceil') and i > avg_rating|round(0, 'floor') %}
+                            <i class="fas fa-star-half-alt rating-star"></i>
+                        {% else %}
+                            <i class="far fa-star rating-empty"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <small class="text-muted">Based on {{ rating_distribution.values()|sum }} ratings</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <!-- Category Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Training by Category</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Enrollment Trends -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Enrollment Trends</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="enrollmentTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Department Participation -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Department Participation</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="departmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rating Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Rating Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="ratingChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Training Programs Table -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Training Programs</h5>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#programTableCollapse">
+            <i class="fas fa-table me-1"></i>Toggle Table View
+        </button>
+    </div>
+    <div class="collapse" id="programTableCollapse">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Instructor</th>
+                            <th>Status</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Enrollments</th>
+                            <th>Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for program in training_programs %}
+                        <tr>
+                            <td>{{ program.title }}</td>
+                            <td>{{ program.category.replace('_', ' ').title() }}</td>
+                            <td>{{ program.instructor }}</td>
+                            <td>
+                                <span class="badge {{ 
+                                    'bg-success' if program.status == 'completed' 
+                                    else 'bg-info' if program.status == 'in-progress' 
+                                    else 'bg-warning' }}">
+                                    {{ program.status.replace('-', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>{{ program.start_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ program.end_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ program.enrolled_count }}{% if program.max_participants > 0 %}/{{ program.max_participants }}{% endif %}</td>
+                            <td>
+                                {% if program.avg_rating is defined and program.avg_rating > 0 %}
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= program.avg_rating %}
+                                            <i class="fas fa-star rating-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star rating-empty"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <small>({{ program.rating_count }})</small>
+                                {% else %}
+                                    <span class="text-muted">No ratings</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm" method="GET" action="{{ url_for('reports.export_training_analytics') }}">
+                    <!-- Pass along current filters -->
+                    {% if request.args.get('department') %}
+                    <input type="hidden" name="department" value="{{ request.args.get('department') }}">
+                    {% endif %}
+                    {% if request.args.get('time_period') %}
+                    <input type="hidden" name="time_period" value="{{ request.args.get('time_period') }}">
+                    {% endif %}
+                    {% if request.args.get('category') %}
+                    <input type="hidden" name="category" value="{{ request.args.get('category') }}">
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Export Format</label>
+                        <select class="form-select" name="export_format">
+                            <option value="pdf">PDF Document</option>
+                            <option value="csv">CSV Spreadsheet</option>
+                            <option value="excel">Excel Spreadsheet</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Include</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" checked name="include_charts" id="includeCharts" value="true">
+                            <label class="form-check-label" for="includeCharts">
+                                Include Charts and Visualizations
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" checked name="include_details" id="includeDetails" value="true">
+                            <label class="form-check-label" for="includeDetails">
+                                Include Program Details Table
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts
+        
+        // Category Distribution Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        const categoryChart = new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ categories|map(attribute='name')|map('replace', '_', ' ')|map('title')|list|tojson }},
+                datasets: [{
+                    data: {{ categories|map(attribute='count')|list|tojson }},
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Monthly Enrollment Trends Chart
+        const enrollmentTrendsCtx = document.getElementById('enrollmentTrendsChart').getContext('2d');
+        const enrollmentTrendsChart = new Chart(enrollmentTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Enrollments',
+                    data: {{ monthly_enrollments|tojson }},
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Enrollments'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Department Participation Chart
+        const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+        const departmentChart = new Chart(departmentCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ departments|map(attribute='name')|map('replace', '_', ' ')|map('title')|list|tojson }},
+                datasets: [{
+                    label: 'Enrollments',
+                    data: {{ departments|map(attribute='enrollments')|list|tojson }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Completions',
+                    data: {{ departments|map(attribute='completions')|list|tojson }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Rating Distribution Chart
+        const ratingCtx = document.getElementById('ratingChart').getContext('2d');
+        const ratingChart = new Chart(ratingCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+                datasets: [{
+                    label: 'Number of Ratings',
+                    data: [
+                        {{ rating_distribution[1] }},
+                        {{ rating_distribution[2] }},
+                        {{ rating_distribution[3] }},
+                        {{ rating_distribution[4] }},
+                        {{ rating_distribution[5] }}
+                    ],
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(32, 201, 151, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(32, 201, 151, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Reset filters button
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            document.getElementById('reportFilterForm').reset();
+            document.getElementById('reportFilterForm').submit();
+        });
+        
+        // Print report button
+        document.getElementById('printReport').addEventListener('click', function() {
+            window.print();
+        });
+    });
+</script>
+{% endblock %}

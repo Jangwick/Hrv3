@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Details - Payroll #{{ payroll.id }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('payroll.index') }}">Payroll</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}">Payroll #{{ payroll.id }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Attendance Details</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Attendance Details</h2>
+    <div>
+        <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Payroll
+        </a>
+    </div>
+</div>
+
+<!-- Payroll Period Info -->
+<div class="alert alert-info">
+    <div class="row">
+        <div class="col-md-4">
+            <strong>Employee:</strong> {{ payroll.employee.get_display_name() }}
+        </div>
+        <div class="col-md-4">
+            <strong>Pay Period:</strong> {{ payroll.period_start.strftime('%b %d') }} - {{ payroll.period_end.strftime('%b %d, %Y') }}
+        </div>
+        <div class="col-md-4">
+            <strong>Status:</strong> 
+            <span class="badge {{ payroll.status_badge_color }}">{{ payroll.status.capitalize() }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Summary -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Attendance Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Overall Attendance Rate</h6>
+                        <div class="display-4 mb-2">{{ "%.1f"|format(attendance_stats.attendance_rate) }}%</div>
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar {{ 
+                                'bg-success' if attendance_stats.attendance_rate >= 90 
+                                else 'bg-warning' if attendance_stats.attendance_rate >= 75 
+                                else 'bg-danger' 
+                            }}" 
+                            style="width: {{ attendance_stats.attendance_rate }}%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row text-center">
+                            <div class="col-6 mb-2">
+                                <div class="card bg-light">
+                                    <div class="card-body py-2">
+                                        <h6 class="text-muted mb-1">Total Days</h6>
+                                        <h3>{{ attendance_stats.total_days }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body py-2">
+                                        <h6 class="text-white-50 mb-1">Present</h6>
+                                        <h3>{{ attendance_stats.present_days }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-danger text-white">
+                                    <div class="card-body py-2">
+                                        <h6 class="text-white-50 mb-1">Absent</h6>
+                                        <h3>{{ attendance_stats.absent_days }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-warning">
+                                    <div class="card-body py-2">
+                                        <h6 class="text-muted mb-1">Late</h6>
+                                        <h3>{{ attendance_stats.late_days }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-money-bill-alt me-2"></i>Attendance Deductions</h5>
+            </div>
+            <div class="card-body">
+                {% if attendance_stats.absent_days > 0 or attendance_stats.late_days > 0 %}
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Attendance deductions applied to this payroll</strong>
+                </div>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if attendance_stats.absent_days > 0 %}
+                        <tr>
+                            <td>Absence</td>
+                            <td>{{ attendance_stats.absent_days }} absent days</td>
+                            <td class="text-end text-danger">${{ attendance_stats.absent_days * 100 }}.00</td>
+                        </tr>
+                        {% endif %}
+                        
+                        {% if attendance_stats.late_days > 2 %}
+                        <tr>
+                            <td>Late Arrival</td>
+                            <td>{{ attendance_stats.late_days - 2 }} excess late days</td>
+                            <td class="text-end text-danger">${{ (attendance_stats.late_days - 2) * 25 }}.00</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-success mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Perfect attendance - no deductions applied</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Records -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Detailed Attendance Records</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if attendance_records %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Teaching Unit</th>
+                        <th>Status</th>
+                        <th>Hours</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_records %}
+                    <tr>
+                        <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ record.teaching_unit.title }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if record.status == 'present' %}bg-success
+                                {% elif record.status == 'absent' %}bg-danger
+                                {% elif record.status == 'late' %}bg-warning
+                                {% else %}bg-info{% endif %}">
+                                {{ record.status.title() }}
+                            </span>
+                        </td>
+                        <td>{{ record.hours }}</td>
+                        <td>{{ record.notes or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h5>No attendance records found</h5>
+            <p class="text-muted">No detailed attendance records available for this period.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

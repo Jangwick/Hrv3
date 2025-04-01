@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Teaching Unit{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('teaching.index') }}">Teaching Units</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('teaching.view', unit_id=unit.id) }}">{{ unit.title }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Teaching Unit</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('teaching.edit', unit_id=unit.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">{{ form.title.label }}</label>
+                            {{ form.title(class="form-control") }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.code.label }}</label>
+                            {{ form.code(class="form-control") }}
+                            {% if form.code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.code.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Optional course/unit code</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.employee_id.label }}</label>
+                            <select name="employee_id" class="form-select">
+                                {% for choice in form.employee_id.choices %}
+                                <option value="{{ choice[0] }}" {% if choice[0] == form.employee_id.data %}selected{% endif %}>{{ choice[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.employee_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.employee_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.academic_term.label }}</label>
+                            <select name="academic_term" class="form-select">
+                                {% for choice in form.academic_term.choices %}
+                                <option value="{{ choice[0] }}" {% if choice[0] == form.academic_term.data %}selected{% endif %}>{{ choice[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.academic_term.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.academic_term.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.start_date.label }}</label>
+                            {{ form.start_date(class="form-control datepicker", type="date") }}
+                            {% if form.start_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.start_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.end_date.label }}</label>
+                            {{ form.end_date(class="form-control datepicker", type="date") }}
+                            {% if form.end_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.end_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.hours_per_week.label }}</label>
+                            {{ form.hours_per_week(class="form-control") }}
+                            {% if form.hours_per_week.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.hours_per_week.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.unit_value.label }}</label>
+                            {{ form.unit_value(class="form-control") }}
+                            {% if form.unit_value.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.unit_value.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Credits/Units for payment calculation</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.rate_per_unit.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.rate_per_unit(class="form-control") }}
+                            </div>
+                            {% if form.rate_per_unit.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.rate_per_unit.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.status.label }}</label>
+                            <select name="status" class="form-select">
+                                {% for choice in form.status.choices %}
+                                <option value="{{ choice[0] }}" {% if choice[0] == form.status.data %}selected{% endif %}>{{ choice[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> Changing unit values or rates may affect payroll calculations.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('teaching.view', unit_id=unit.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Unit Details
+                        </a>
+                        {{ form.submit(class="btn btn-primary", value="Update Unit") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+$(document).ready(function() {
+    // Initialize date pickers
+    $(".datepicker").flatpickr({
+        dateFormat: "Y-m-d"
+    });
+    
+    // Calculate payment when unit_value or rate_per_unit changes
+    $('#unit_value, #rate_per_unit').on('input', function() {
+        const unitValue = parseFloat($('#unit_value').val()) || 0;
+        const ratePerUnit = parseFloat($('#rate_per_unit').val()) || 0;
+        const totalPayment = unitValue * ratePerUnit;
+        
+        // If a total payment display element exists, update it
+        if ($('#total_payment').length) {
+            $('#total_payment').text('$' + totalPayment.toFixed(2));
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Report - {{ employee.get_display_name() }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('attendance.index') }}">Attendance</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('attendance.employee', employee_id=employee.id) }}">{{ employee.username }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Report</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Attendance Report</h1>
+        <h4 class="text-muted">{{ employee.get_display_name() }}</h4>
+    </div>
+    <div>
+        <div class="btn-group">
+            <a href="{{ url_for('attendance.generate_employee_report', employee_id=employee.id, start_date=start_date, end_date=end_date, format='pdf') }}" class="btn btn-primary">
+                <i class="fas fa-file-pdf me-2"></i>Export as PDF
+            </a>
+            <a href="{{ url_for('attendance.generate_employee_report', employee_id=employee.id, start_date=start_date, end_date=end_date, format='csv') }}" class="btn btn-success">
+                <i class="fas fa-file-csv me-2"></i>Export as CSV
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Date Range -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Report Period</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('attendance.generate_employee_report', employee_id=employee.id) }}" id="dateRangeForm">
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sync me-2"></i>Update Report
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Attendance Summary Stats -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Attendance Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row text-center">
+                    <div class="col">
+                        <div class="card bg-light h-100">
+                            <div class="card-body py-3">
+                                <h6 class="text-muted mb-2">Total Days</h6>
+                                <h2>{{ stats.total_days }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-success text-white h-100">
+                            <div class="card-body py-3">
+                                <h6 class="text-white-50 mb-2">Present</h6>
+                                <h2>{{ stats.present_days }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-danger text-white h-100">
+                            <div class="card-body py-3">
+                                <h6 class="text-white-50 mb-2">Absent</h6>
+                                <h2>{{ stats.absent_days }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-warning h-100">
+                            <div class="card-body py-3">
+                                <h6 class="text-muted mb-2">Late</h6>
+                                <h2>{{ stats.late_days }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-info text-white h-100">
+                            <div class="card-body py-3">
+                                <h6 class="text-white-50 mb-2">Excused</h6>
+                                <h2>{{ stats.excused_days }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <h6 class="text-muted mb-2">Attendance Rate</h6>
+                        <div class="display-1 mb-3">{{ "%.1f"|format(stats.attendance_rate) }}%</div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar {{ 
+                                'bg-success' if stats.attendance_rate >= 90 
+                                else 'bg-warning' if stats.attendance_rate >= 75 
+                                else 'bg-danger' 
+                            }}" 
+                            style="width: {{ stats.attendance_rate }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Records -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Attendance Records</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if attendance_records %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Teaching Unit</th>
+                        <th>Status</th>
+                        <th>Hours</th>
+                        <th>Recorder</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_records %}
+                    <tr>
+                        <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ record.teaching_unit.title }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if record.status == 'present' %}bg-success
+                                {% elif record.status == 'absent' %}bg-danger
+                                {% elif record.status == 'late' %}bg-warning
+                                {% else %}bg-info{% endif %}">
+                                {{ record.status.title() }}
+                            </span>
+                        </td>
+                        <td>{{ record.hours }}</td>
+                        <td>{{ record.recorder.username }}</td>
+                        <td>{{ record.notes or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h5>No attendance records found</h5>
+            <p class="text-muted">No records found for this date range.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('attendance.employee', employee_id=employee.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Employee Attendance
+    </a>
+</div>
+{% endblock %}

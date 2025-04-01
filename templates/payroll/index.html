@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Records{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Payroll Management</h1>
+    {% if current_user.is_hr() or current_user.is_admin() %}
+    <div>
+        <a href="{{ url_for('payroll.new') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create New Payroll
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search/Filter Form -->
+<div class="card mb-4">
+    <div class="card-header ">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Search Payroll Records</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('payroll.index') }}">
+            <div class="row g-3">
+                {% if current_user.is_hr() or current_user.is_admin() %}
+                <div class="col-md-3">
+                    {{ form.employee.label(class="form-label") }}
+                    {{ form.employee(class="form-select") }}
+                </div>
+                {% endif %}
+                
+                <div class="col-md-3">
+                    {{ form.period.label(class="form-label") }}
+                    {{ form.period(class="form-select") }}
+                </div>
+                
+                <div class="col-md-2">
+                    {{ form.status.label(class="form-label") }}
+                    {{ form.status(class="form-select") }}
+                </div>
+                
+                <div class="col-md-2">
+                    {{ form.start_date.label(class="form-label") }}
+                    {{ form.start_date(class="form-control", type="date") }}
+                </div>
+                
+                <div class="col-md-2">
+                    {{ form.end_date.label(class="form-label") }}
+                    {{ form.end_date(class="form-control", type="date") }}
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Payroll Records -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Payroll Records</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if payrolls %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="">
+                    <tr>
+                        <th>ID</th>
+                        {% if current_user.is_hr() or current_user.is_admin() %}
+                        <th>Employee</th>
+                        {% endif %}
+                        <th>Pay Period</th>
+                        <th>Base Pay</th>
+                        <th>Unit Pay</th>
+                        <th>Deductions</th>
+                        <th>Net Pay</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payroll in payrolls %}
+                    <tr class="{% if 'teaching unit' in payroll.notes|lower %}table-info{% endif %}">
+                        <td>
+                            <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="fw-bold text-decoration-none">
+                                #{{ payroll.id }}
+                            </a>
+                            {% if 'teaching unit' in payroll.notes|lower %}
+                                <span class="badge bg-info text-dark">
+                                    <i class="fas fa-chalkboard-teacher me-1"></i>Teaching
+                                </span>
+                            {% endif %}
+                        </td>
+                        {% if current_user.is_hr() or current_user.is_admin() %}
+                        <td>{{ payroll.employee.get_display_name() }}</td>
+                        {% endif %}
+                        <td>
+                            {{ payroll.period_start.strftime('%b %d') }} - 
+                            {{ payroll.period_end.strftime('%b %d, %Y') }}
+                        </td>
+                        <td>${{ "%.2f"|format(payroll.base_pay) }}</td>
+                        <td>${{ "%.2f"|format(payroll.unit_pay) }}</td>
+                        <td>${{ "%.2f"|format(payroll.deductions) }}</td>
+                        <td class="fw-bold">${{ "%.2f"|format(payroll.net_pay) }}</td>
+                        <td>
+                            <span class="badge {{ payroll.status_badge_color }}">
+                                {{ payroll.status.capitalize() }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if payroll.status == 'draft' or payroll.status == 'pending' %}
+                                <a href="{{ url_for('payroll.edit', payroll_id=payroll.id) }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if payroll.status == 'draft' or payroll.status == 'pending' %}
+                                <a href="{{ url_for('payroll.process', payroll_id=payroll.id) }}" class="btn btn-outline-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('payroll.add_deduction', payroll_id=payroll.id) }}" class="btn btn-outline-warning" title="Manage Deductions">
+                                    <i class="fas fa-minus-circle"></i>
+                                </a>
+                                <a href="{{ url_for('payroll.print_payroll', payroll_id=payroll.id) }}" class="btn btn-outline-info" target="_blank">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="far fa-money-bill-alt fa-3x text-muted mb-3"></i>
+            <h5>No Payroll Records Found</h5>
+            <p>No records match your search criteria or no payroll records have been created yet.</p>
+            {% if current_user.is_hr() or current_user.is_admin() %}
+            <a href="{{ url_for('payroll.new') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-2"></i>Create New Payroll
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
