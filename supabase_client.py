@@ -24,26 +24,29 @@ def get_db_url():
     """
     Generates a PostgreSQL connection string for SQLAlchemy using Supabase credentials
     """
-    db_url = os.environ.get("POSTGRES_URL_NON_POOLING")
+    # Try POSTGRES_URL_NON_POOLING first (direct connection without pooling)
+    db_url = os.environ.get("POSTGRES_URL_NON_POOLING") or os.environ.get("POSTGRES_URL")
     
-    # If DATABASE_URL is provided directly, use it
     if db_url:
+        # Replace 'postgres://' with 'postgresql://' as SQLAlchemy requires 'postgresql'
+        if db_url.startswith('postgres://'):
+            db_url = 'postgresql://' + db_url[len('postgres://'):]
         return db_url
     
     # Otherwise, construct from individual components
-    db_host = os.environ.get("SUPABASE_DB_HOST")
+    db_host = os.environ.get("POSTGRES_HOST")
     # Use the default port 5432 if not specified or invalid
     try:
         db_port = int(os.environ.get("SUPABASE_DB_PORT", "5432"))
     except (ValueError, TypeError):
         db_port = 5432
     
-    db_name = os.environ.get("SUPABASE_DB_NAME", "postgres")
-    db_user = os.environ.get("SUPABASE_DB_USER", "postgres")
-    db_password = os.environ.get("SUPABASE_DB_PASSWORD", "")
+    db_name = os.environ.get("POSTGRES_DATABASE")
+    db_user = os.environ.get("POSTGRES_USER")
+    db_password = os.environ.get("POSTGRES_PASSWORD")
     
     if not db_host:
-        raise ValueError("Database host is required. Set SUPABASE_DB_HOST environment variable.")
+        raise ValueError("Database host is required. Set POSTGRES_HOST environment variable.")
     
-    # Construct connection string
+    # Construct connection string with the correct 'postgresql://' prefix
     return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
