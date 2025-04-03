@@ -14,10 +14,14 @@ from datetime import datetime
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CSRFProtect
-import sqlite3
+import psycopg2  # PostgreSQL adapter
+from sqlalchemy import create_engine
 
 # Import the register_routes function from routes module
 from routes import register_routes
+
+# Import Supabase client and database URL function
+from supabase_client import supabase, get_db_url
 
 # Load environment variables
 load_dotenv()
@@ -28,9 +32,19 @@ def create_app():
     app = Flask(__name__)
 
     # Configure the application
-    app.config['SECRET_KEY'] = os.urandom(24)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///school_hr.db'
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+    
+    # Configure SQLAlchemy to use Supabase PostgreSQL database
+    app.config['SQLALCHEMY_DATABASE_URI'] = get_db_url()
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # PostgreSQL-specific SQLAlchemy settings
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 10,
+        'max_overflow': 20,
+        'pool_recycle': 300,  # Recycle connections after 5 minutes
+        'pool_pre_ping': True,  # Check connection validity before use
+    }
 
     # Mail configuration
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -82,7 +96,7 @@ def create_app():
         # Add current date to context for templates
         now = datetime.now()
         
-        return dict(get_profile_image_url=get_profile_image_url, now=now)
+        return dict(get_profile_image_url=get_profile_image_url, now=now, supabase=supabase)
 
     # Ensure static files are served correctly
     @app.route('/static/<path:filename>')
@@ -100,8 +114,21 @@ def create_app():
         @admin_required
         def protected_migration():
             try:
-                from migrations.add_created_at_to_payroll_deduction import run_migration
-                run_migration()
+                # Use SQLAlchemy execute method instead of SQLite-specific operations
+                with db.engine.connect() as connection:
+                    # Add created_at column to payroll_deduction if it doesn't exist
+                    connection.execute("""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT FROM information_schema.columns 
+                                WHERE table_name = 'payroll_deduction' AND column_name = 'created_at'
+                            ) THEN
+                                ALTER TABLE payroll_deduction ADD COLUMN created_at TIMESTAMP DEFAULT NOW();
+                            END IF;
+                        END
+                        $$;
+                    """)
                 flash('Database migrations executed successfully!', 'success')
             except Exception as e:
                 flash(f'Error running migrations: {str(e)}', 'danger')
@@ -118,7 +145,12 @@ def create_app():
 # Create database tables
 def init_db():
     with app.app_context():
-        db.create_all()
+        # Check database connection by creating tables
+        try:
+            db.create_all()
+            print("Database connection successful and tables created!")
+        except Exception as e:
+            print(f"Database connection error: {str(e)}")
 
 # Run the application
 if __name__ == '__main__':
