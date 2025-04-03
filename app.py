@@ -20,7 +20,7 @@ from sqlalchemy import create_engine
 # Import the register_routes function from routes module
 from routes import register_routes
 
-# Import Supabase client and database URL function
+# Import Supabase client 
 from supabase_client import supabase, get_db_url
 
 # Load environment variables
@@ -38,24 +38,28 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = get_db_url()
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # PostgreSQL-specific SQLAlchemy settings
+    # PostgreSQL-specific SQLAlchemy settings for serverless environment
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 10,
-        'max_overflow': 20,
-        'pool_recycle': 300,  # Recycle connections after 5 minutes
+        'pool_size': 5,  # Reduced for serverless
+        'max_overflow': 10,
+        'pool_recycle': 60,  # More aggressive recycling for serverless
         'pool_pre_ping': True,  # Check connection validity before use
     }
 
     # Mail configuration
-    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-    app.config['MAIL_PORT'] = 587
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = 'welptest12@gmail.com'  # Replace with your Gmail
-    app.config['MAIL_PASSWORD'] = 'ylwz hhwq bvjz gpgb'  # Use App Password, not regular password
-    app.config['MAIL_DEFAULT_SENDER'] = ('HR System', 'no-reply@gmail.com')
+    app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', '587'))
+    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'HR System <no-reply@gmail.com>')
 
-    # Configure upload folder
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
+    # Configure upload folder - use tmp for Vercel
+    if os.environ.get('VERCEL', False):
+        app.config['UPLOAD_FOLDER'] = '/tmp'
+    else:
+        app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
+    
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit uploads to 16MB
 
     # Initialize extensions
@@ -142,15 +146,17 @@ def create_app():
 
     return app
 
-# Create database tables
+# Create database tables - for local development
 def init_db():
-    with app.app_context():
-        # Check database connection by creating tables
-        try:
-            db.create_all()
-            print("Database connection successful and tables created!")
-        except Exception as e:
-            print(f"Database connection error: {str(e)}")
+    # Only run if not in Vercel environment
+    if not os.environ.get('VERCEL', False):
+        with app.app_context():
+            # Check database connection by creating tables
+            try:
+                db.create_all()
+                print("Database connection successful and tables created!")
+            except Exception as e:
+                print(f"Database connection error: {str(e)}")
 
 # Run the application
 if __name__ == '__main__':
@@ -171,6 +177,3 @@ else:
     
     # Initialize the Flask application
     app = create_app()
-    
-    # Initialize the database
-    init_db()
