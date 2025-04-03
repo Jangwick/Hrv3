@@ -5,9 +5,19 @@ from argon2.exceptions import VerifyMismatchError
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app as app
 from datetime import datetime, timedelta
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import text
 
 db = SQLAlchemy()
 ph = PasswordHasher()
+
+# Add this helper function for Supabase raw SQL operations
+def execute_raw_sql(sql, params=None):
+    """Execute raw SQL with proper handling for Supabase PostgreSQL"""
+    if params is None:
+        params = {}
+    result = db.session.execute(text(sql), params)
+    return result
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -713,32 +723,26 @@ class Payroll(db.Model):
             
             return deductions
 
-# We need a helper function to create deductions without created_at column
+# Update the add_deduction_safe function to work with PostgreSQL
 def add_deduction_safe(payroll_id, deduction_type, description, amount):
     """Add a deduction record without using created_at column"""
-    from sqlalchemy import text
     
-    # Use direct SQL to insert without the created_at column
+    # Use PostgreSQL's RETURNING clause to get the inserted ID
     sql = text("""
         INSERT INTO payroll_deduction (payroll_id, deduction_type, description, amount)
         VALUES (:payroll_id, :deduction_type, :description, :amount)
+        RETURNING id
     """)
     
     # Execute with parameters
-    db.session.execute(sql, {
+    result = db.session.execute(sql, {
         "payroll_id": payroll_id,
         "deduction_type": deduction_type,
         "description": description,
         "amount": float(amount)
     })
     
-    # Get the inserted record's ID
-    result = db.session.execute(text("""
-        SELECT id FROM payroll_deduction 
-        WHERE payroll_id = :payroll_id 
-        ORDER BY id DESC LIMIT 1
-    """), {"payroll_id": payroll_id})
-    
+    # Get the ID directly from the RETURNING clause
     return result.scalar()
 
 class PayrollDeduction(db.Model):
