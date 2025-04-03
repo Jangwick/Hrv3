@@ -90,7 +90,7 @@
                     <span class="step" id="step3">3</span>
                 </div>
                 
-                <form method="POST" action="{{ url_for('signup') }}" id="signupForm">
+                <form method="POST" action="{{ url_for('auth.signup') }}" id="signupForm">
                     {{ form.hidden_tag() }}
                     
                     <!-- Step 1: Account Info -->
