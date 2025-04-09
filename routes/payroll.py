@@ -153,7 +153,7 @@ def new():
                     hours=unit['hours_taught'],
                     rate=unit['rate_per_unit'],
                     amount=unit['earnings'],
-                    description=f"Teaching: {unit['title']} ({unit['hours_taught']} hours @ ${unit['rate_per_unit']}/hr)"
+                    description=f"Teaching: {unit['title']} ({unit['hours_taught']} hours @ ₱{unit['rate_per_unit']}/hr)"
                 )
                 db.session.add(new_unit)
         
@@ -418,5 +418,5 @@ def generate_from_unit(unit_id):
     
     # Redirect to the payroll view with a success message
     flash(f'Payroll record generated successfully for teaching unit "{unit.title}"!', 'success')
-    flash(f'Generated payroll amount: ${unit_payment:.2f} based on attendance rate of {unit.attendance_rate:.1f}%', 'info')
+    flash(f'Generated payroll amount: ₱{unit_payment:.2f} based on attendance rate of {unit.attendance_rate:.1f}%', 'info')
     return redirect(url_for('payroll.view', payroll_id=payroll.id))

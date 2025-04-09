@@ -64,13 +64,13 @@
                     <div class="col-md-6">
                         <h6>Payment Details</h6>
                         <p><strong>Academic Units:</strong> {{ unit.unit_value }}</p>
-                        <p><strong>Rate per Unit:</strong> ${{ "%.2f"|format(unit.rate_per_unit) }}</p>
+                        <p><strong>Rate per Unit:</strong> ₱{{ "%.2f"|format(unit.rate_per_unit) }}</p>
                     </div>
                     <div class="col-md-6">
                         <h6>Attendance & Totals</h6>
                         <p><strong>Total Hours:</strong> {{ unit.total_hours }}</p>
                         <p><strong>Attendance Rate:</strong> {{ "%.1f"|format(unit.attendance_rate) }}%</p>
-                        <p class="fw-bold fs-5">Total Payment: ${{ "%.2f"|format(unit.total_payment) }}</p>
+                        <p class="fw-bold fs-5">Total Payment: ₱{{ "%.2f"|format(unit.total_payment) }}</p>
                     </div>
                 </div>
             </div>
@@ -211,11 +211,11 @@
                         </tr>
                         <tr>
                             <th>× Rate per Unit</th>
-                            <td>${{ "%.2f"|format(unit.rate_per_unit) }}</td>
+                            <td>₱{{ "%.2f"|format(unit.rate_per_unit) }}</td>
                         </tr>
                         <tr class="">
                             <th>= Base Payment</th>
-                            <th class="text-end">${{ "%.2f"|format(unit.total_payment) }}</th>
+                            <th class="text-end">₱{{ "%.2f"|format(unit.total_payment) }}</th>
                         </tr>
                         <tr>
                             <th>× Attendance Factor</th>
@@ -223,7 +223,7 @@
                         </tr>
                         <tr class="table-primary">
                             <th>= Adjusted Payment</th>
-                            <th class="text-end">${{ "%.2f"|format(unit.total_payment * (unit.attendance_rate / 100)) }}</th>
+                            <th class="text-end">₱{{ "%.2f"|format(unit.total_payment * (unit.attendance_rate / 100)) }}</th>
                         </tr>
                     </table>
                 </div>

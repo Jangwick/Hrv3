@@ -415,7 +415,7 @@ class EmployeeSalary(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    currency = db.Column(db.String(10), default='USD', nullable=False)
+    currency = db.Column(db.String(10), default='PHP', nullable=False)
     effective_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=True)  # Null if it's the current salary
     salary_type = db.Column(db.String(20), default='annual', nullable=False)  # annual, monthly, hourly, contract, stipend
@@ -764,7 +764,7 @@ class PayrollDeduction(db.Model):
     payroll = db.relationship('Payroll')
     
     def __repr__(self):
-        return f'<PayrollDeduction {self.id}: {self.description} ${self.amount}>'
+        return f'<PayrollDeduction {self.id}: {self.description} ₱{self.amount}>'
 
 class PayrollUnit(db.Model):
     id = db.Column(db.Integer, primary_key=True)

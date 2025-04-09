@@ -53,15 +53,15 @@
                         <div class="row">
                             <div class="col-md-4 text-center border-end">
                                 <p class="text-muted mb-0">Base Pay</p>
-                                <h3>${{ "%.2f"|format(payroll.base_pay) }}</h3>
+                                <h3>₱{{ "%.2f"|format(payroll.base_pay) }}</h3>
                             </div>
                             <div class="col-md-4 text-center border-end">
                                 <p class="text-muted mb-0">Unit Pay</p>
-                                <h3>${{ "%.2f"|format(payroll.unit_pay) }}</h3>
+                                <h3>₱{{ "%.2f"|format(payroll.unit_pay) }}</h3>
                             </div>
                             <div class="col-md-4 text-center">
                                 <p class="text-muted mb-0">Deductions</p>
-                                <h3>${{ "%.2f"|format(payroll.deductions) }}</h3>
+                                <h3>₱{{ "%.2f"|format(payroll.deductions) }}</h3>
                             </div>
                         </div>
                         <hr>
@@ -70,15 +70,15 @@
                                 <table class="table table-sm">
                                     <tr>
                                         <th>Total Pay:</th>
-                                        <td class="text-end">${{ "%.2f"|format(payroll.total_pay) }}</td>
+                                        <td class="text-end">₱{{ "%.2f"|format(payroll.total_pay) }}</td>
                                     </tr>
                                     <tr>
                                         <th>Total Deductions:</th>
-                                        <td class="text-end">-${{ "%.2f"|format(payroll.deductions) }}</td>
+                                        <td class="text-end">-₱{{ "%.2f"|format(payroll.deductions) }}</td>
                                     </tr>
                                     <tr class="table-active fw-bold">
                                         <th>Net Pay:</th>
-                                        <td class="text-end">${{ "%.2f"|format(payroll.net_pay) }}</td>
+                                        <td class="text-end">₱{{ "%.2f"|format(payroll.net_pay) }}</td>
                                     </tr>
                                 </table>
                             </div>
@@ -136,14 +136,14 @@
                             <div class="text-muted small">{{ unit_item.teaching_unit.code or 'No code' }}</div>
                         </td>
                         <td>{{ "%.2f"|format(unit_item.unit_value) }}</td>
-                        <td>${{ "%.2f"|format(unit_item.rate_per_unit) }}</td>
+                        <td>₱{{ "%.2f"|format(unit_item.rate_per_unit) }}</td>
                         <td>{% if unit_item.attendance_factor is not none %}{{ "%.0f"|format(unit_item.attendance_factor * 100) }}{% else %}0{% endif %}%</td>
-                        <td class="text-end">${{ "%.2f"|format(unit_item.total_amount) }}</td>
+                        <td class="text-end">₱{{ "%.2f"|format(unit_item.total_amount) }}</td>
                     </tr>
                     {% endfor %}
                     <tr class="">
                         <td colspan="4" class="text-end fw-bold">Total:</td>
-                        <td class="text-end fw-bold">${{ "%.2f"|format(payroll.unit_pay) }}</td>
+                        <td class="text-end fw-bold">₱{{ "%.2f"|format(payroll.unit_pay) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -179,15 +179,15 @@
                         <tr>
                             <td>{{ unit.description }}</td>
                             <td>{{ unit.hours }}</td>
-                            <td>${{ "%.2f"|format(unit.rate_per_unit) }}</td>
-                            <td class="text-end text-success">${{ "%.2f"|format(unit.total_amount) }}</td>
+                            <td>₱{{ "%.2f"|format(unit.rate_per_unit) }}</td>
+                            <td class="text-end text-success">₱{{ "%.2f"|format(unit.total_amount) }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
                             <th colspan="3">Total Teaching Earnings</th>
-                            <th class="text-end text-success">${{ "%.2f"|format(payroll.unit_pay) }}</th>
+                            <th class="text-end text-success">₱{{ "%.2f"|format(payroll.unit_pay) }}</th>
                         </tr>
                     </tfoot>
                 </table>
@@ -303,12 +303,12 @@
                             </span>
                         </td>
                         <td>{{ deduction.description }}</td>
-                        <td class="text-end">${{ "%.2f"|format(deduction.amount) }}</td>
+                        <td class="text-end">₱{{ "%.2f"|format(deduction.amount) }}</td>
                     </tr>
                     {% endfor %}
                     <tr class="">
                         <td colspan="2" class="text-end fw-bold">Total:</td>
-                        <td class="text-end fw-bold">${{ "%.2f"|format(payroll.deductions) }}</td>
+                        <td class="text-end fw-bold">₱{{ "%.2f"|format(payroll.deductions) }}</td>
                     </tr>
                 </tbody>
             </table>

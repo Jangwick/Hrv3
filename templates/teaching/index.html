@@ -46,7 +46,7 @@
                                 <td>{{ unit.hours_per_week }}</td>
                                 <td>{{ unit.unit_value }}</td>
                                 <td>{{ unit.rate_per_unit }}</td>
-                                <td class="text-end fw-bold">${{ "%.2f"|format(unit.total_payment) }}</td>
+                                <td class="text-end fw-bold">₱{{ "%.2f"|format(unit.total_payment) }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="{{ url_for('teaching.view', unit_id=unit.id) }}" class="btn btn-outline-primary">
@@ -108,7 +108,7 @@
                                 <td>{{ unit.hours_per_week }}</td>
                                 <td>{{ unit.unit_value }}</td>
                                 <td>{{ unit.rate_per_unit }}</td>
-                                <td class="text-end fw-bold">${{ "%.2f"|format(unit.total_payment) }}</td>
+                                <td class="text-end fw-bold">₱{{ "%.2f"|format(unit.total_payment) }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="{{ url_for('teaching.view', unit_id=unit.id) }}" class="btn btn-outline-primary">

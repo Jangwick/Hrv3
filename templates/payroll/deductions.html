@@ -28,12 +28,12 @@
                 <p><strong>Pay Period:</strong> {{ payroll.period_start.strftime('%b %d, %Y') }} - {{ payroll.period_end.strftime('%b %d, %Y') }}</p>
             </div>
             <div class="col-md-4">
-                <p><strong>Base Pay:</strong> ${{ "%.2f"|format(payroll.base_pay) }}</p>
-                <p><strong>Unit Pay:</strong> ${{ "%.2f"|format(payroll.unit_pay) }}</p>
+                <p><strong>Base Pay:</strong> ₱{{ "%.2f"|format(payroll.base_pay) }}</p>
+                <p><strong>Unit Pay:</strong> ₱{{ "%.2f"|format(payroll.unit_pay) }}</p>
             </div>
             <div class="col-md-4">
-                <p><strong>Total Pay:</strong> ${{ "%.2f"|format(payroll.total_pay) }}</p>
-                <p><strong>Current Deductions:</strong> ${{ "%.2f"|format(payroll.deductions) }}</p>
+                <p><strong>Total Pay:</strong> ₱{{ "%.2f"|format(payroll.total_pay) }}</p>
+                <p><strong>Current Deductions:</strong> ₱{{ "%.2f"|format(payroll.deductions) }}</p>
             </div>
         </div>
     </div>
@@ -68,7 +68,7 @@
                             </span>
                         </td>
                         <td>{{ deduction.description }}</td>
-                        <td class="text-end">${{ "%.2f"|format(deduction.amount) }}</td>
+                        <td class="text-end">₱{{ "%.2f"|format(deduction.amount) }}</td>
                         <td class="text-center">
                             <form method="POST" action="{{ url_for('payroll.delete_deduction', payroll_id=payroll.id, deduction_id=deduction.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this deduction?');">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -82,7 +82,7 @@
                 <tfoot class="">
                     <tr>
                         <th colspan="2" class="text-end">Total Deductions:</th>
-                        <th class="text-end">${{ "%.2f"|format(payroll.deductions) }}</th>
+                        <th class="text-end">₱{{ "%.2f"|format(payroll.deductions) }}</th>
                         <th></th>
                     </tr>
                 </tfoot>
@@ -135,7 +135,7 @@
                 <div class="col-md-4">
                     <label class="form-label">{{ deduction_form.amount.label }}</label>
                     <div class="input-group">
-                        <span class="input-group-text">$</span>
+                        <span class="input-group-text">₱</span>
                         {{ deduction_form.amount(class="form-control", placeholder="0.00") }}
                     </div>
                     {% if deduction_form.amount.errors %}
@@ -167,7 +167,7 @@
                     <div class="card-body text-center">
                         <i class="fas fa-file-invoice-dollar text-info fa-2x mb-2"></i>
                         <h6>Income Tax</h6>
-                        <p class="mb-0">${{ "%.2f"|format(payroll.total_pay * 0.12) }}</p>
+                        <p class="mb-0">₱{{ "%.2f"|format(payroll.total_pay * 0.12) }}</p>
                         <small class="text-muted">12% of total pay</small>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                     <div class="card-body text-center">
                         <i class="fas fa-heartbeat text-danger fa-2x mb-2"></i>
                         <h6>Health Insurance</h6>
-                        <p class="mb-0">$125.00</p>
+                        <p class="mb-0">₱125.00</p>
                         <small class="text-muted">Standard premium</small>
                     </div>
                 </div>
@@ -187,7 +187,7 @@
                     <div class="card-body text-center">
                         <i class="fas fa-piggy-bank text-success fa-2x mb-2"></i>
                         <h6>Retirement</h6>
-                        <p class="mb-0">${{ "%.2f"|format(payroll.total_pay * 0.05) }}</p>
+                        <p class="mb-0">₱{{ "%.2f"|format(payroll.total_pay * 0.05) }}</p>
                         <small class="text-muted">5% of total pay</small>
                     </div>
                 </div>
@@ -197,7 +197,7 @@
                     <div class="card-body text-center">
                         <i class="fas fa-id-badge text-secondary fa-2x mb-2"></i>
                         <h6>Professional Dues</h6>
-                        <p class="mb-0">$45.00</p>
+                        <p class="mb-0">₱45.00</p>
                         <small class="text-muted">Monthly dues</small>
                     </div>
                 </div>
@@ -214,15 +214,15 @@
                 <table class="table">
                     <tr>
                         <td>Total Pay:</td>
-                        <td class="text-end">${{ "%.2f"|format(payroll.total_pay) }}</td>
+                        <td class="text-end">₱{{ "%.2f"|format(payroll.total_pay) }}</td>
                     </tr>
                     <tr>
                         <td>Total Deductions:</td>
-                        <td class="text-end">-${{ "%.2f"|format(payroll.deductions) }}</td>
+                        <td class="text-end">-₱{{ "%.2f"|format(payroll.deductions) }}</td>
                     </tr>
                     <tr class="table-active">
                         <th>Net Pay:</th>
-                        <th class="text-end">${{ "%.2f"|format(payroll.net_pay) }}</th>
+                        <th class="text-end">₱{{ "%.2f"|format(payroll.net_pay) }}</th>
                     </tr>
                 </table>
             </div>

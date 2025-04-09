@@ -63,7 +63,7 @@
     <div class="col-md-3">
         <div class="card h-100">
             <div class="card-body text-center p-4">
-                <div class="fs-2 fw-bold text-info">{{ "%.2f"|format(summary.avg_monthly) }} USD</div>
+                <div class="fs-2 fw-bold text-info">{{ "%.2f"|format(summary.avg_monthly) }} PHP</div>
                 <div class="text-muted small">Average Monthly</div>
             </div>
         </div>
@@ -71,7 +71,7 @@
     <div class="col-md-3">
         <div class="card h-100">
             <div class="card-body text-center p-4">
-                <div class="fs-2 fw-bold text-danger">{{ "%.2f"|format(summary.avg_annual) }} USD</div>
+                <div class="fs-2 fw-bold text-danger">{{ "%.2f"|format(summary.avg_annual) }} PHP</div>
                 <div class="text-muted small">Average Annual</div>
             </div>
         </div>
@@ -160,8 +160,8 @@
                             <!-- Group Summary Row -->
                             <tr class="table-secondary">
                                 <td colspan="{% if form.group_by.data == 'department' %}3{% elif form.group_by.data == 'salary_type' %}4{% else %}5{% endif %}"><strong>Group Summary</strong></td>
-                                <td><strong>{{ "%.2f"|format(group_items|sum(attribute='monthly_equivalent')) }} USD</strong></td>
-                                <td><strong>{{ "%.2f"|format(group_items|sum(attribute='annual_equivalent')) }} USD</strong></td>
+                                <td><strong>{{ "%.2f"|format(group_items|sum(attribute='monthly_equivalent')) }} PHP</strong></td>
+                                <td><strong>{{ "%.2f"|format(group_items|sum(attribute='annual_equivalent')) }} PHP</strong></td>
                             </tr>
                         </tbody>
                     </table>

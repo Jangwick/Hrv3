@@ -103,10 +103,10 @@
                             {{ payroll.period_start.strftime('%b %d') }} - 
                             {{ payroll.period_end.strftime('%b %d, %Y') }}
                         </td>
-                        <td>${{ "%.2f"|format(payroll.base_pay) }}</td>
-                        <td>${{ "%.2f"|format(payroll.unit_pay) }}</td>
-                        <td>${{ "%.2f"|format(payroll.deductions) }}</td>
-                        <td class="fw-bold">${{ "%.2f"|format(payroll.net_pay) }}</td>
+                        <td>₱{{ "%.2f"|format(payroll.base_pay) }}</td>
+                        <td>₱{{ "%.2f"|format(payroll.unit_pay) }}</td>
+                        <td>₱{{ "%.2f"|format(payroll.deductions) }}</td>
+                        <td class="fw-bold">₱{{ "%.2f"|format(payroll.net_pay) }}</td>
                         <td>
                             <span class="badge {{ payroll.status_badge_color }}">
                                 {{ payroll.status.capitalize() }}
