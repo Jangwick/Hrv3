@@ -126,10 +126,108 @@ def send_reset_email(user):
     mail = current_app.extensions['mail']
     msg = Message('Password Reset Request',
                   recipients=[user.email])
+    
+    # Plain text version for email clients that don't support HTML
     msg.body = f'''To reset your password, visit the following link:
 {url_for('auth.reset_token', token=token, _external=True)}
+
 If you did not make this request then simply ignore this email and no changes will be made.
 '''
+    
+    # HTML version with styling that matches your website
+    reset_link = url_for('auth.reset_token', token=token, _external=True)
+    msg.html = f'''
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Arial, sans-serif;
+                color: #333;
+                line-height: 1.6;
+                margin: 0;
+                padding: 0;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }}
+            .card {{
+                border-radius: 8px;
+                overflow: hidden;
+                border: 1px solid #ddd;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }}
+            .card-header {{
+                background-color: #0d6efd;
+                color: white;
+                padding: 16px;
+                text-align: center;
+            }}
+            .card-body {{
+                padding: 20px;
+                background-color: #fff;
+            }}
+             .btn {{
+                display: inline-block;
+                background-color: #0066cc; 
+                color: #ffffff !important;
+                text-decoration: none;
+                padding: 12px 30px;
+                border-radius: 4px;
+                text-align: center;
+                font-weight: bold;
+                margin: 20px 0;
+                font-size: 16px;
+                letter-spacing: 0.5px;
+                text-shadow: 0px 1px 1px rgba(0,0,0,0.2);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            .text-muted {{
+                color: #6c757d;
+                font-size: 0.9em;
+            }}
+            .text-center {{
+                text-align: center;
+            }}
+            .footer {{
+                text-align: center;
+                margin-top: 20px;
+                color: #6c757d;
+                font-size: 0.85em;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h2 style="margin: 0;">Password Reset Request</h2>
+                </div>
+                <div class="card-body">
+                    <h3>Hello!</h3>
+                    <p>You are receiving this email because a password reset request was made for your account.</p>
+                    <p>Please click the button below to reset your password:</p>
+                    
+                    <div class="text-center">
+                        <a href="{reset_link}" class="btn">Reset Your Password</a>
+                    </div>
+                    
+                    <p>If the button doesn't work, copy and paste the following link into your browser:</p>
+                    <p><a href="{reset_link}">{reset_link}</a></p>
+                    
+                    <p class="text-muted">If you didn't request a password reset, please ignore this email and no changes will be made to your account.</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p>© {datetime.now().year} HR Management System</p>
+                <p>This is an automated message, please do not reply.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+    
     mail.send(msg)
 
 @auth_bp.route('/reset_password', methods=['GET', 'POST'])
