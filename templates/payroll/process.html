@@ -33,12 +33,12 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4">
-                                <p><strong>Base Pay:</strong> ${{ "%.2f"|format(payroll.base_pay) }}</p>
-                                <p><strong>Unit Pay:</strong> ${{ "%.2f"|format(payroll.unit_pay) }}</p>
+                                <p><strong>Base Pay:</strong> ₱{{ "%.2f"|format(payroll.base_pay) }}</p>
+                                <p><strong>Unit Pay:</strong> ₱{{ "%.2f"|format(payroll.unit_pay) }}</p>
                             </div>
                             <div class="col-md-4">
-                                <p><strong>Deductions:</strong> ${{ "%.2f"|format(payroll.deductions) }}</p>
-                                <p><strong>Net Pay:</strong> ${{ "%.2f"|format(payroll.net_pay) }}</p>
+                                <p><strong>Deductions:</strong> ₱{{ "%.2f"|format(payroll.deductions) }}</p>
+                                <p><strong>Net Pay:</strong> ₱{{ "%.2f"|format(payroll.net_pay) }}</p>
                             </div>
                             <div class="col-md-4">
                                 <p><strong>Payment Method:</strong> {{ payroll.payment_method.replace('_', ' ').title() if payroll.payment_method else 'Not specified' }}</p>

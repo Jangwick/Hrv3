@@ -111,11 +111,11 @@
                 <div>Total Employees</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value">{{ "%.2f"|format(summary.avg_monthly) }} USD</div>
+                <div class="summary-value">{{ "%.2f"|format(summary.avg_monthly) }} PHP</div>
                 <div>Average Monthly</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value">{{ "%.2f"|format(summary.avg_annual) }} USD</div>
+                <div class="summary-value">{{ "%.2f"|format(summary.avg_annual) }} PHP</div>
                 <div>Average Annual</div>
             </div>
         </div>
@@ -155,8 +155,8 @@
                 <!-- Group Summary Row -->
                 <tr style="font-weight: bold; background-color: #e9ecef;">
                     <td colspan="5">Group Summary</td>
-                    <td>{{ "%.2f"|format(group_items|sum(attribute='monthly_equivalent')) }} USD</td>
-                    <td>{{ "%.2f"|format(group_items|sum(attribute='annual_equivalent')) }} USD</td>
+                    <td>{{ "%.2f"|format(group_items|sum(attribute='monthly_equivalent')) }} PHP</td>
+                    <td>{{ "%.2f"|format(group_items|sum(attribute='annual_equivalent')) }} PHP</td>
                 </tr>
             </tbody>
         </table>

@@ -67,9 +67,9 @@ print("Generating sample data...")
 print("Inserting employee_salary data...")
 salary_data = [
     # (employee_id, amount, currency, salary_type, contract_type, effective_date, end_date, is_active, created_by, created_at)
-    (1, 75000.00, 'USD', 'annual', 'full_time', format_date(one_year_ago), None, 1, 3, now()),
-    (2, 6000.00, 'USD', 'monthly', 'full_time', format_date(one_year_ago), None, 1, 3, now()),
-    (3, 25.00, 'USD', 'hourly', 'part_time', format_date(one_year_ago), None, 1, 3, now())
+    (1, 75000.00, 'PHP', 'annual', 'full_time', format_date(one_year_ago), None, 1, 3, now()),
+    (2, 6000.00, 'PHP', 'monthly', 'full_time', format_date(one_year_ago), None, 1, 3, now()),
+    (3, 25.00, 'PHP', 'hourly', 'part_time', format_date(one_year_ago), None, 1, 3, now())
 ]
 
 for salary in salary_data:

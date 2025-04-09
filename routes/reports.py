@@ -171,8 +171,8 @@ def salary_report():
                 [
                     str(summary['total_employees']),
                     str(summary['departments']),
-                    f"${summary['avg_monthly']:.2f}",
-                    f"${summary['avg_annual']:.2f}"
+                    f"PHP {summary['avg_monthly']:.2f}",
+                    f"PHP {summary['avg_annual']:.2f}"
                 ]
             ]
             

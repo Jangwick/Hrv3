@@ -179,6 +179,7 @@ class TrainingFeedbackForm(FlaskForm):
 class SalaryForm(FlaskForm):
     amount = FloatField('Salary Amount', validators=[DataRequired(), NumberRange(min=0)])
     currency = SelectField('Currency', choices=[
+        ('PHP', 'PHP - Philippine Peso'),
         ('USD', 'USD - US Dollar'),
         ('EUR', 'EUR - Euro'),
         ('GBP', 'GBP - British Pound'),
@@ -310,7 +311,7 @@ class PayrollDeductionForm(FlaskForm):
         ('other', 'Other')
     ], validators=[DataRequired()])
     description = StringField('Description', validators=[DataRequired(), Length(max=100)])
-    amount = FloatField('Amount ($)', validators=[DataRequired(), NumberRange(min=0)])
+    amount = FloatField('Amount (₱)', validators=[DataRequired(), NumberRange(min=0)])
     submit = SubmitField('Add Deduction')
 
 class PayrollSearchForm(FlaskForm):
@@ -430,7 +431,7 @@ class TeachingUnitForm(FlaskForm):
     end_date = DateField('End Date', validators=[DataRequired()])
     hours_per_week = FloatField('Teaching Hours/Week', validators=[DataRequired(), NumberRange(min=0.5, max=40)])
     unit_value = FloatField('Academic Units/Credits', validators=[DataRequired(), NumberRange(min=0.5, max=10)])
-    rate_per_unit = FloatField('Rate per Unit ($)', validators=[DataRequired(), NumberRange(min=0)])
+    rate_per_unit = FloatField('Rate per Unit (₱)', validators=[DataRequired(), NumberRange(min=0)])
     status = SelectField('Status',
                         choices=[
                             ('pending', 'Pending'),
@@ -454,7 +455,7 @@ class PayrollForm(FlaskForm):
     period_start = DateField('Period Start Date', validators=[DataRequired()])
     period_end = DateField('Period End Date', validators=[DataRequired()])
     payment_date = DateField('Payment Date', validators=[Optional()])
-    base_pay = FloatField('Base Pay ($)', default=0.0, validators=[Optional(), NumberRange(min=0)])
+    base_pay = FloatField('Base Pay (₱)', default=0.0, validators=[Optional(), NumberRange(min=0)])
     payment_method = SelectField('Payment Method', choices=[
         ('direct_deposit', 'Direct Deposit'),
         ('check', 'Check'),

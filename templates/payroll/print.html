@@ -82,19 +82,19 @@
             <table class="table table-sm">
                 <tr>
                     <th width="40%">Base Pay:</th>
-                    <td>${{ "%.2f"|format(payroll.base_pay) }}</td>
+                    <td>₱{{ "%.2f"|format(payroll.base_pay) }}</td>
                 </tr>
                 <tr>
                     <th>Unit Pay:</th>
-                    <td>${{ "%.2f"|format(payroll.unit_pay) }}</td>
+                    <td>₱{{ "%.2f"|format(payroll.unit_pay) }}</td>
                 </tr>
                 <tr>
                     <th>Deductions:</th>
-                    <td>${{ "%.2f"|format(payroll.deductions) }}</td>
+                    <td>₱{{ "%.2f"|format(payroll.deductions) }}</td>
                 </tr>
                 <tr class="table-active">
                     <th>Net Pay:</th>
-                    <td><strong>${{ "%.2f"|format(payroll.net_pay) }}</strong></td>
+                    <td><strong>₱{{ "%.2f"|format(payroll.net_pay) }}</strong></td>
                 </tr>
             </table>
         </div>
@@ -121,14 +121,14 @@
                     {% if unit_item.teaching_unit.code %}({{ unit_item.teaching_unit.code }}){% endif %}
                 </td>
                 <td>{{ "%.2f"|format(unit_item.unit_value) }}</td>
-                <td>${{ "%.2f"|format(unit_item.rate_per_unit) }}</td>
+                <td>₱{{ "%.2f"|format(unit_item.rate_per_unit) }}</td>
                 <td>{% if unit_item.attendance_factor is not none %}{{ "%.0f"|format(unit_item.attendance_factor * 100) }}{% else %}0{% endif %}%</td>
-                <td class="text-end">${{ "%.2f"|format(unit_item.total_amount) }}</td>
+                <td class="text-end">₱{{ "%.2f"|format(unit_item.total_amount) }}</td>
             </tr>
             {% endfor %}
             <tr class="table-active">
                 <td colspan="4" class="text-end fw-bold">Total:</td>
-                <td class="text-end fw-bold">${{ "%.2f"|format(payroll.unit_pay) }}</td>
+                <td class="text-end fw-bold">₱{{ "%.2f"|format(payroll.unit_pay) }}</td>
             </tr>
         </tbody>
     </table>
@@ -150,12 +150,12 @@
             <tr>
                 <td>{{ deduction.deduction_type.capitalize() }}</td>
                 <td>{{ deduction.description }}</td>
-                <td class="text-end">${{ "%.2f"|format(deduction.amount) }}</td>
+                <td class="text-end">₱{{ "%.2f"|format(deduction.amount) }}</td>
             </tr>
             {% endfor %}
             <tr class="table-active">
                 <td colspan="2" class="text-end fw-bold">Total:</td>
-                <td class="text-end fw-bold">${{ "%.2f"|format(payroll.deductions) }}</td>
+                <td class="text-end fw-bold">₱{{ "%.2f"|format(payroll.deductions) }}</td>
             </tr>
         </tbody>
     </table>

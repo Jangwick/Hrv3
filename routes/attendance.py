@@ -613,7 +613,7 @@ def get_attendance_for_payroll(employee_id, start_date, end_date):
     
     # Absence deduction
     if stats['absent_days'] > 0:
-        deduction_amount = stats['absent_days'] * 100  # Example: $100 per absence
+        deduction_amount = stats['absent_days'] * 100  # Example: ₱100 per absence
         deductions.append({
             'type': 'absence',
             'description': f'Absence deduction ({stats["absent_days"]} days)',
@@ -623,7 +623,7 @@ def get_attendance_for_payroll(employee_id, start_date, end_date):
     # Late arrival deduction (if applicable)
     if stats['late_days'] > 2:  # Example: Allow 2 late arrivals per period
         excess_late = stats['late_days'] - 2
-        deduction_amount = excess_late * 25  # Example: $25 per excess late arrival
+        deduction_amount = excess_late * 25  # Example: ₱25 per excess late arrival
         deductions.append({
             'type': 'late',
             'description': f'Late arrival deduction ({excess_late} excess days)',

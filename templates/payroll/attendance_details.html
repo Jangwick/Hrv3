@@ -123,7 +123,7 @@
                         <tr>
                             <td>Absence</td>
                             <td>{{ attendance_stats.absent_days }} absent days</td>
-                            <td class="text-end text-danger">${{ attendance_stats.absent_days * 100 }}.00</td>
+                            <td class="text-end text-danger">₱{{ attendance_stats.absent_days * 100 }}.00</td>
                         </tr>
                         {% endif %}
                         
@@ -131,7 +131,7 @@
                         <tr>
                             <td>Late Arrival</td>
                             <td>{{ attendance_stats.late_days - 2 }} excess late days</td>
-                            <td class="text-end text-danger">${{ (attendance_stats.late_days - 2) * 25 }}.00</td>
+                            <td class="text-end text-danger">₱{{ (attendance_stats.late_days - 2) * 25 }}.00</td>
                         </tr>
                         {% endif %}
                     </tbody>
