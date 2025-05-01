@@ -245,13 +245,13 @@
                             </div>
                         </div>
                     {% else %}
-                        <form method="POST" action="{{ url_for('trainings.unenroll', training_id=training.id, employee_id=current_user.id) }}">
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to unenroll from this training?')">
-                                    <i class="fas fa-user-minus me-2"></i>Unenroll
-                                </button>
-                            </div>
-                        </form>
+                        <!-- Changed to button that triggers JavaScript function -->
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-danger" 
+                                   onclick="submitUnenroll({{ training.id }}, {{ current_user.id }})">
+                                <i class="fas fa-user-minus me-2"></i>Unenroll
+                            </button>
+                        </div>
                     {% endif %}
                 {% else %}
                     {% if training.status == 'upcoming' or training.status == 'in-progress' %}
@@ -323,16 +323,11 @@
                     {% for user, enrollment in enrolled_employees %}
                     <div class="list-group-item d-flex justify-content-between align-items-center"> 
                         <span>{{ user.get_display_name() or user.username }}</span>
-                        <div> 
-                            {# This form includes the method="POST" and the CSRF token input #}
-                            <form method="POST" action="{{ url_for('trainings.unenroll', training_id=training.id, employee_id=user.id) }}">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/> 
-                                <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                        onclick="return confirm('Remove this employee from the training?');">
-                                    <i class="fas fa-user-minus"></i> Remove
-                                </button>
-                            </form>
-                        </div>
+                        <!-- Changed to button that triggers JavaScript function -->
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                               onclick="submitUnenroll({{ training.id }}, {{ user.id }}, '{{ user.get_display_name() or user.username }}')">
+                            <i class="fas fa-user-minus"></i> Remove
+                        </button>
                     </div>
                     {% endfor %}
                 </div>
@@ -343,9 +338,44 @@
     </div>
 </div>
 
+<!-- Hidden form for unenroll submissions -->
+<form id="unenrollForm" method="POST" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="training_id" id="unenroll_training_id">
+    <input type="hidden" name="employee_id" id="unenroll_employee_id">
+</form>
+
 <div class="mt-3">
     <a href="{{ url_for('trainings.index') }}" class="btn btn-secondary">
         <i class="fas fa-arrow-left me-2"></i>Back to Training Programs
     </a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function submitUnenroll(trainingId, employeeId, employeeName) {
+    // Build confirmation message
+    let message = 'Are you sure you want to ';
+    if (employeeName) {
+        message += 'remove ' + employeeName + ' from this training?';
+    } else {
+        message += 'unenroll from this training?';
+    }
+    
+    // Show confirmation dialog
+    if (confirm(message)) {
+        // Set form values
+        document.getElementById('unenroll_training_id').value = trainingId;
+        document.getElementById('unenroll_employee_id').value = employeeId;
+        
+        // Build the form action URL
+        const form = document.getElementById('unenrollForm');
+        form.action = `/trainings/${trainingId}/unenroll/${employeeId}`;
+        
+        // Submit the form
+        form.submit();
+    }
+}
+</script>
 {% endblock %}
