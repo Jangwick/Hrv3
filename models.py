@@ -684,11 +684,11 @@ class Payroll(db.Model):
         """Recalculate and update the unit pay and deductions totals"""
         # Calculate unit pay
         unit_items = PayrollUnit.query.filter_by(payroll_id=self.id).all()
-        self.unit_pay = sum(item.total_amount for item in unit_items)
+        self.unit_pay = sum(float(item.total_amount or 0.0) for item in unit_items)
         
         # Calculate deductions
         deduction_items = PayrollDeduction.query.filter_by(payroll_id=self.id).all()
-        self.deductions = sum(item.amount for item in deduction_items)
+        self.deductions = sum(float(item.amount or 0.0) for item in deduction_items)
         
         return self
 
@@ -723,6 +723,67 @@ class Payroll(db.Model):
             
             return deductions
 
+    def calculate_sss_contribution(self):
+        """Calculate SSS contribution based on total pay and constants"""
+        from constants import SSS_EMPLOYEE_SHARE, SSS_MAX_MSC
+        
+        # Use MSC or max MSC, whichever is lower
+        monthly_salary_credit = min(self.total_pay, SSS_MAX_MSC)
+        
+        # Calculate employee's share (5% of MSC)
+        employee_contribution = monthly_salary_credit * SSS_EMPLOYEE_SHARE
+        
+        return {
+            'amount': employee_contribution,
+            'description': f"SSS Contribution ({SSS_EMPLOYEE_SHARE*100:.0f}% of ₱{monthly_salary_credit:.2f})"
+        }
+    
+    def calculate_pagibig_contribution(self):
+        """Calculate Pag-IBIG contribution based on total pay and constants"""
+        from constants import (PAGIBIG_EMPLOYEE_RATE_LOW, PAGIBIG_EMPLOYEE_RATE_STD,
+                              PAGIBIG_LOW_INCOME_THRESHOLD)
+        
+        # Determine rate based on income threshold
+        if self.total_pay <= PAGIBIG_LOW_INCOME_THRESHOLD:
+            rate = PAGIBIG_EMPLOYEE_RATE_LOW
+            rate_display = f"{PAGIBIG_EMPLOYEE_RATE_LOW*100:.0f}%"
+        else:
+            rate = PAGIBIG_EMPLOYEE_RATE_STD
+            rate_display = f"{PAGIBIG_EMPLOYEE_RATE_STD*100:.0f}%"
+        
+        employee_contribution = self.total_pay * rate
+        
+        return {
+            'amount': employee_contribution,
+            'description': f"Pag-IBIG Contribution ({rate_display} of ₱{self.total_pay:.2f})"
+        }
+
+    def calculate_philhealth_contribution(self):
+        """Calculate PhilHealth contribution based on total pay and constants (5.0% rate, 10k floor, 100k ceiling)."""
+        from constants import (PHILHEALTH_RATE, PHILHEALTH_MIN_INCOME_BASE, 
+                              PHILHEALTH_MAX_INCOME_CEILING, PHILHEALTH_EMPLOYEE_SHARE_RATE)
+        
+        # Determine the income base for calculation based on floor and ceiling
+        if self.total_pay <= PHILHEALTH_MIN_INCOME_BASE:
+            income_base = PHILHEALTH_MIN_INCOME_BASE
+        elif self.total_pay >= PHILHEALTH_MAX_INCOME_CEILING:
+            income_base = PHILHEALTH_MAX_INCOME_CEILING
+        else:
+            # Use the actual total pay if it's within the floor and ceiling
+            income_base = self.total_pay
+            
+        # Calculate total premium (Rate * income base)
+        total_premium = income_base * PHILHEALTH_RATE
+        
+        # Calculate employee's share (50% of total premium)
+        employee_contribution = total_premium * PHILHEALTH_EMPLOYEE_SHARE_RATE
+        
+        return {
+            'amount': employee_contribution,
+            # Updated description to reflect the 5.0% rate and 50% share
+            'description': f"PhilHealth ({PHILHEALTH_RATE*100:.1f}% of ₱{income_base:.2f}, Employee Share: {PHILHEALTH_EMPLOYEE_SHARE_RATE*100:.0f}%)"
+        }
+
 # Update the add_deduction_safe function to work with PostgreSQL
 def add_deduction_safe(payroll_id, deduction_type, description, amount):
     """Add a deduction record without using created_at column"""
@@ -749,9 +810,9 @@ class PayrollDeduction(db.Model):
     """Model for payroll deductions"""
     id = db.Column(db.Integer, primary_key=True)
     payroll_id = db.Column(db.Integer, db.ForeignKey('payroll.id'), nullable=False)
-    deduction_type = db.Column(db.String(20), default='other')  # tax, insurance, retirement, other
+    deduction_type = db.Column(db.String(20), default='other')  # tax, insurance, retirement, sss, pagibig, philhealth, other
     description = db.Column(db.String(100), nullable=False)
-    amount = db.Column(db.Float, nullable=False, default=0.0)
+    amount = db.Column(db.Float, nullable=False, default=0.0) # Ensure this is Float
     
     # Make created_at optional to avoid errors when the column doesn't exist
     # Using Declarative Hybrid Pattern to handle missing column

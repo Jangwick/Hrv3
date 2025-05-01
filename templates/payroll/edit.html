@@ -9,7 +9,7 @@
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('hr.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('hr.dashboard') }}">Dashboard</a></li> {# Corrected endpoint #}
         <li class="breadcrumb-item"><a href="{{ url_for('payroll.index') }}">Payroll</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}">Payroll #{{ payroll.id }}</a></li>
         <li class="breadcrumb-item active" aria-current="page">Edit</li>

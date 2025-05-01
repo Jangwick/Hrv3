@@ -16,6 +16,10 @@ import calendar
 from routes.attendance import get_attendance_for_payroll
 from routes.teaching import get_teaching_data_for_payroll
 
+# Import constants
+from constants import (DEFAULT_INCOME_TAX_RATE, DEFAULT_RETIREMENT_RATE, 
+                       DEFAULT_HEALTH_INSURANCE_PREMIUM, DEFAULT_PROFESSIONAL_DUES)
+
 payroll_bp = Blueprint('payroll', __name__)
 
 @payroll_bp.route('/payroll')
@@ -230,14 +234,28 @@ def manage_deductions(payroll_id):
     """Manage deductions for a payroll record"""
     payroll = Payroll.query.get_or_404(payroll_id)
     
+    # Get existing deductions
     deductions = PayrollDeduction.query.filter_by(payroll_id=payroll_id).all()
     deduction_form = PayrollDeductionForm()
+    
+    # Add these for the template to access the calculation methods
+    sss_contribution = payroll.calculate_sss_contribution()
+    pagibig_contribution = payroll.calculate_pagibig_contribution()
+    philhealth_contribution = payroll.calculate_philhealth_contribution() # Added PhilHealth calculation
     
     return render_template(
         'payroll/deductions.html',
         payroll=payroll,
         deductions=deductions,
-        deduction_form=deduction_form
+        deduction_form=deduction_form,
+        sss_contribution=sss_contribution,
+        pagibig_contribution=pagibig_contribution,
+        philhealth_contribution=philhealth_contribution, # Pass PhilHealth data
+        # Pass common deduction constants
+        DEFAULT_INCOME_TAX_RATE=DEFAULT_INCOME_TAX_RATE,
+        DEFAULT_RETIREMENT_RATE=DEFAULT_RETIREMENT_RATE,
+        DEFAULT_HEALTH_INSURANCE_PREMIUM=DEFAULT_HEALTH_INSURANCE_PREMIUM,
+        DEFAULT_PROFESSIONAL_DUES=DEFAULT_PROFESSIONAL_DUES
     )
 
 @payroll_bp.route('/payroll/<int:payroll_id>/deductions/add', methods=['POST', 'GET'])
@@ -254,14 +272,17 @@ def add_deduction(payroll_id):
     
     if form.validate_on_submit():
         try:
+            deduction_amount = float(form.amount.data)  # Convert Decimal to float
             deduction = PayrollDeduction(
                 payroll_id=payroll.id,
                 deduction_type=form.deduction_type.data,
                 description=form.description.data,
-                amount=form.amount.data
+                amount=deduction_amount  # Store as float
             )
             db.session.add(deduction)
-            payroll.deductions += form.amount.data
+            
+            # Update payroll total deductions using float
+            payroll.deductions = float(payroll.deductions or 0.0) + deduction_amount
             db.session.commit()
             
             flash('Deduction added successfully!', 'success')
@@ -282,10 +303,12 @@ def delete_deduction(payroll_id, deduction_id):
     if deduction.payroll_id != payroll_id:
         abort(404)
     
+    deduction_amount = float(deduction.amount) # Ensure amount is float
     db.session.delete(deduction)
     db.session.commit()
     
-    payroll.deductions -= deduction.amount
+    # Update payroll total deductions using float
+    payroll.deductions = float(payroll.deductions or 0.0) - deduction_amount
     db.session.commit()
     
     flash('Deduction deleted successfully!', 'success')
@@ -420,3 +443,64 @@ def generate_from_unit(unit_id):
     flash(f'Payroll record generated successfully for teaching unit "{unit.title}"!', 'success')
     flash(f'Generated payroll amount: ₱{unit_payment:.2f} based on attendance rate of {unit.attendance_rate:.1f}%', 'info')
     return redirect(url_for('payroll.view', payroll_id=payroll.id))
+
+@payroll_bp.route('/payroll/<int:payroll_id>/calculate-benefits', methods=['POST'])
+@login_required
+@hr_or_admin_required
+def calculate_benefits(payroll_id):
+    """Calculate and add standard benefits/deductions to payroll"""
+    payroll = Payroll.query.get_or_404(payroll_id)
+    
+    benefit_type = request.form.get('benefit_type')
+    
+    try:
+        deduction_amount = 0.0 # Initialize as float
+        deduction = None # Initialize deduction object
+
+        if benefit_type == 'sss':
+            # Calculate SSS contribution
+            contribution = payroll.calculate_sss_contribution()
+            deduction_amount = float(contribution['amount']) # Ensure float
+            deduction = PayrollDeduction(
+                payroll_id=payroll.id,
+                deduction_type='sss',
+                description=contribution['description'],
+                amount=deduction_amount
+            )
+            
+        elif benefit_type == 'pagibig':
+            # Calculate Pag-IBIG contribution
+            contribution = payroll.calculate_pagibig_contribution()
+            deduction_amount = float(contribution['amount']) # Ensure float
+            deduction = PayrollDeduction(
+                payroll_id=payroll.id,
+                deduction_type='pagibig',
+                description=contribution['description'],
+                amount=deduction_amount
+            )
+
+        elif benefit_type == 'philhealth': # Added PhilHealth handling
+            # Calculate PhilHealth contribution
+            contribution = payroll.calculate_philhealth_contribution()
+            deduction_amount = float(contribution['amount']) # Ensure float
+            deduction = PayrollDeduction(
+                payroll_id=payroll.id,
+                deduction_type='philhealth',
+                description=contribution['description'],
+                amount=deduction_amount
+            )
+        
+        if deduction: # Check if a deduction was created
+            db.session.add(deduction)
+            # Update payroll total deductions using float
+            payroll.deductions = float(payroll.deductions or 0.0) + deduction_amount
+            db.session.commit()
+            flash(f'{benefit_type.upper()} contribution added successfully!', 'success')
+        else:
+            flash(f'Unknown benefit type: {benefit_type}', 'warning')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding benefit: {str(e)}', 'danger')
+    
+    return redirect(url_for('payroll.manage_deductions', payroll_id=payroll_id))

@@ -5,7 +5,7 @@
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('hr.dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('payroll.index') }}">Payroll</a></li>
         <li class="breadcrumb-item active" aria-current="page">Payroll #{{ payroll.id }}</li>
     </ol>
@@ -15,13 +15,51 @@
     <h1>Payroll Details</h1>
     <div class="btn-group">
         {% if current_user.is_hr() or current_user.is_admin() %}
-        <a href="{{ url_for('payroll.edit', payroll_id=payroll.id) }}" class="btn btn-primary">
-            <i class="fas fa-edit me-2"></i>Edit Payroll
-        </a>
+            {% if payroll.status in ['draft', 'pending'] %}
+            <a href="{{ url_for('payroll.edit', payroll_id=payroll.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Edit Payroll
+            </a>
+            {% endif %}
         {% endif %}
-        <a href="{{ url_for('payroll.print_payroll', payroll_id=payroll.id) }}" class="btn btn-info" target="_blank">
-            <i class="fas fa-print me-2"></i>Print Payslip
-        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-end gap-2">
+            {# Edit Button - Show if draft or pending #}
+            {% if payroll.status in ['draft', 'pending'] %}
+          
+            {% endif %}
+
+            {# Manage Deductions Button - Show if draft or pending #}
+            {% if payroll.status in ['draft', 'pending'] %}
+            <a href="{{ url_for('payroll.manage_deductions', payroll_id=payroll.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-tags me-1"></i> Manage Deductions
+            </a>
+            {% endif %}
+
+            {# Process Payroll Button - Show if draft or pending #}
+            {% if payroll.status in ['draft', 'pending'] %}
+            <a href="{{ url_for('payroll.process', payroll_id=payroll.id) }}" class="btn btn-success">
+                <i class="fas fa-cogs me-1"></i> Process Payroll
+            </a>
+            {% endif %}
+
+            {# Print Button - Show if approved or paid #}
+            {% if payroll.status in ['approved', 'paid'] %}
+            <a href="{{ url_for('payroll.print_payroll', payroll_id=payroll.id) }}" class="btn btn-info" target="_blank">
+                <i class="fas fa-print me-1"></i> Print Payslip
+            </a>
+            {% endif %}
+            
+            {# Delete Button - Show only if draft #}
+            {% if payroll.status == 'draft' %}
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deletePayrollModal">
+                <i class="fas fa-trash-alt me-1"></i> Delete
+            </button>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -106,7 +144,7 @@
     </div>
     
     {% if 'teaching unit' in payroll.notes|lower %}
-    <div class="card-body bg-light">
+    <div class="card-body ">
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>
             <strong>Auto-generated payroll:</strong> This payroll was automatically generated from a teaching unit.
@@ -297,7 +335,10 @@
                         <td>
                             <span class="badge {{ 'bg-info' if deduction.deduction_type == 'tax' else 
                                               'bg-warning' if deduction.deduction_type == 'insurance' else
-                                              'bg-primary' if deduction.deduction_type == 'retirement' else
+                                              'bg-primary' if deduction.deduction_type == 'sss' else
+                                              'bg-success' if deduction.deduction_type == 'pagibig' else
+                                              'bg-info' if deduction.deduction_type == 'philhealth' else
+                                              'bg-secondary' if deduction.deduction_type == 'retirement' else
                                               'bg-secondary' }}">
                                 {{ deduction.deduction_type.capitalize() }}
                             </span>
@@ -338,4 +379,12 @@
         <i class="fas fa-arrow-left me-2"></i>Back to Payroll List
     </a>
 </div>
+
+<!-- Delete Confirmation Modal -->
+{% if payroll.status == 'draft' %}
+<div class="modal fade" id="deletePayrollModal" tabindex="-1" aria-labelledby="deletePayrollModalLabel" aria-hidden="true">
+    <!-- ... modal content ... -->
+</div>
+{% endif %}
+
 {% endblock %}
