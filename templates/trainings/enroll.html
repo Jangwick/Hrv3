@@ -64,7 +64,7 @@
                     </div>
                 </div>
                 
-                <form method="POST" action="{{ url_for('trainings.new', training_id=training.id) }}">
+                <form method="POST" action="{{ url_for('trainings.enroll', training_id=training.id) }}">
                     {{ form.hidden_tag() }}
                     
                     <div class="mb-4">
