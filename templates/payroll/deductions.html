@@ -3,18 +3,21 @@
 {% block title %}Manage Deductions{% endblock %}
 
 {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Manage Payroll Deductions</h1>
+    <a href="{{ url_for('hr.dashboard') }}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+</div>
+
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('hr.dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('payroll.index') }}">Payroll</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}">Payroll #{{ payroll.id }}</a></li>
         <li class="breadcrumb-item active" aria-current="page">Manage Deductions</li>
     </ol>
 </nav>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Manage Payroll Deductions</h1>
-</div>
 
 <!-- Payroll Summary Card -->
 <div class="card mb-4">
@@ -102,7 +105,7 @@
         <h5 class="mb-0">Add New Deduction</h5>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('payroll.add_deduction', payroll_id=payroll.id) }}">
+        <form method="POST" action="{{ url_for('payroll.add_deduction', payroll_id=payroll.id) }}" id="deduction-form">
             {{ deduction_form.hidden_tag() }}
             
             <div class="row mb-3">
@@ -162,42 +165,81 @@
     </div>
     <div class="card-body">
         <div class="row">
+            {# Income Tax Card - Calculated #}
             <div class="col-md-3 mb-3">
-                <div class="card h-100 quick-add-card" data-type="tax" data-description="Income Tax Withholding" data-amount="{{ payroll.total_pay * 0.12 }}">
+                {% set income_tax_amount = payroll.total_pay * DEFAULT_INCOME_TAX_RATE %}
+                <div class="card h-100 quick-add-card" data-type="tax" data-description="Income Tax Withholding ({{ (DEFAULT_INCOME_TAX_RATE * 100)|int }}%)" data-amount="{{ income_tax_amount }}">
                     <div class="card-body text-center">
                         <i class="fas fa-file-invoice-dollar text-info fa-2x mb-2"></i>
                         <h6>Income Tax</h6>
-                        <p class="mb-0">₱{{ "%.2f"|format(payroll.total_pay * 0.12) }}</p>
-                        <small class="text-muted">12% of total pay</small>
+                        <p class="mb-0">₱{{ "%.2f"|format(income_tax_amount) }}</p>
+                        <small class="text-muted">{{ (DEFAULT_INCOME_TAX_RATE * 100)|int }}% of total pay</small>
                     </div>
                 </div>
             </div>
+            {# SSS Card - Uses model method #}
             <div class="col-md-3 mb-3">
-                <div class="card h-100 quick-add-card" data-type="insurance" data-description="Health Insurance Premium" data-amount="125.00">
+                <div class="card h-100 quick-add-card" data-type="sss" data-description="{{ payroll.calculate_sss_contribution()['description'] }}" data-amount="{{ payroll.calculate_sss_contribution()['amount'] }}">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt text-primary fa-2x mb-2"></i>
+                        <h6>SSS Contribution</h6>
+                        <p class="mb-0">₱{{ "%.2f"|format(payroll.calculate_sss_contribution()['amount']) }}</p>
+                        <small class="text-muted">5% employee's share</small> {# Note: This text might need updating if SSS rules change #}
+                    </div>
+                </div>
+            </div>
+            {# Pag-IBIG Card - Uses model method #}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100 quick-add-card" data-type="pagibig" data-description="{{ payroll.calculate_pagibig_contribution()['description'] }}" data-amount="{{ payroll.calculate_pagibig_contribution()['amount'] }}">
+                    <div class="card-body text-center">
+                        <i class="fas fa-home text-success fa-2x mb-2"></i>
+                        <h6>Pag-IBIG Fund</h6>
+                        <p class="mb-0">₱{{ "%.2f"|format(payroll.calculate_pagibig_contribution()['amount']) }}</p>
+                        <small class="text-muted">{{ "1%" if payroll.total_pay <= 1500 else "2%" }} contribution</small> {# Note: This text might need updating if Pag-IBIG rules change #}
+                    </div>
+                </div>
+            </div>
+            {# PhilHealth Card - Uses model method #}
+            <div class="col-md-3 mb-3"> 
+                <div class="card h-100 quick-add-card" data-type="philhealth" data-description="{{ payroll.calculate_philhealth_contribution()['description'] }}" data-amount="{{ payroll.calculate_philhealth_contribution()['amount'] }}">
+                    <div class="card-body text-center">
+                        <i class="fas fa-hospital-user text-info fa-2x mb-2"></i>
+                        <h6>PhilHealth</h6>
+                        <p class="mb-0">₱{{ "%.2f"|format(payroll.calculate_philhealth_contribution()['amount']) }}</p>
+                        <small class="text-muted">50% employee share</small> {# Note: This text might need updating if PhilHealth rules change #}
+                    </div>
+                </div>
+            </div>
+            {# Health Insurance Card - Uses Constant #}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100 quick-add-card" data-type="insurance" data-description="Health Insurance Premium" data-amount="{{ DEFAULT_HEALTH_INSURANCE_PREMIUM }}">
                     <div class="card-body text-center">
                         <i class="fas fa-heartbeat text-danger fa-2x mb-2"></i>
                         <h6>Health Insurance</h6>
-                        <p class="mb-0">₱125.00</p>
+                        <p class="mb-0">₱{{ "%.2f"|format(DEFAULT_HEALTH_INSURANCE_PREMIUM) }}</p>
                         <small class="text-muted">Standard premium</small>
                     </div>
                 </div>
             </div>
+            {# Retirement Card - Calculated #}
             <div class="col-md-3 mb-3">
-                <div class="card h-100 quick-add-card" data-type="retirement" data-description="Retirement Fund Contribution" data-amount="{{ payroll.total_pay * 0.05 }}">
+                {% set retirement_amount = payroll.total_pay * DEFAULT_RETIREMENT_RATE %}
+                <div class="card h-100 quick-add-card" data-type="retirement" data-description="Retirement Fund Contribution ({{ (DEFAULT_RETIREMENT_RATE * 100)|int }}%)" data-amount="{{ retirement_amount }}">
                     <div class="card-body text-center">
                         <i class="fas fa-piggy-bank text-success fa-2x mb-2"></i>
                         <h6>Retirement</h6>
-                        <p class="mb-0">₱{{ "%.2f"|format(payroll.total_pay * 0.05) }}</p>
-                        <small class="text-muted">5% of total pay</small>
+                        <p class="mb-0">₱{{ "%.2f"|format(retirement_amount) }}</p>
+                        <small class="text-muted">{{ (DEFAULT_RETIREMENT_RATE * 100)|int }}% of total pay</small>
                     </div>
                 </div>
             </div>
+            {# Professional Dues Card - Uses Constant #}
             <div class="col-md-3 mb-3">
-                <div class="card h-100 quick-add-card" data-type="other" data-description="Professional Dues" data-amount="45.00">
+                <div class="card h-100 quick-add-card" data-type="other" data-description="Professional Dues" data-amount="{{ DEFAULT_PROFESSIONAL_DUES }}">
                     <div class="card-body text-center">
                         <i class="fas fa-id-badge text-secondary fa-2x mb-2"></i>
                         <h6>Professional Dues</h6>
-                        <p class="mb-0">₱45.00</p>
+                        <p class="mb-0">₱{{ "%.2f"|format(DEFAULT_PROFESSIONAL_DUES) }}</p>
                         <small class="text-muted">Monthly dues</small>
                     </div>
                 </div>
@@ -231,9 +273,12 @@
             <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to Payroll Details
             </a>
-            <a href="{{ url_for('payroll.process', payroll_id=payroll.id) }}" class="btn btn-primary">
-                <i class="fas fa-check-circle me-2"></i>Process Payroll
+            {# Process Payroll Button - Show if draft or pending #}
+            {% if payroll.status in ['draft', 'pending'] %}
+            <a href="{{ url_for('payroll.process', payroll_id=payroll.id) }}" class="btn btn-success">
+                <i class="fas fa-cogs me-1"></i> Process Payroll
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -245,26 +290,51 @@
 $(document).ready(function() {
     // Quick add cards functionality
     $('.quick-add-card').click(function() {
+        // Get data from the clicked card's data attributes
         const type = $(this).data('type');
         const description = $(this).data('description');
-        const amount = $(this).data('amount');
+        // Ensure amount is treated as a number
+        const amount = parseFloat($(this).data('amount')); 
+
+        // Select the form fields using their name attributes within the specific form
+        const form = $('#deduction-form'); // Target the form by its ID
+        form.find('select[name="deduction_type"]').val(type);
+        form.find('input[name="description"]').val(description);
+        // Set the amount, formatted to 2 decimal places
+        form.find('input[name="amount"]').val(amount.toFixed(2)); 
         
-        // Fill the form
-        $('select[name="deduction_type"]').val(type);
-        $('input[name="description"]').val(description);
-        $('input[name="amount"]').val(amount.toFixed(2));
-        
-        // Highlight the form to draw attention
-        $('.card-header.bg-success').addClass('pulse');
+        // Highlight the form card header to draw attention
+        const formCardHeader = form.closest('.card').find('.card-header');
+        formCardHeader.addClass('pulse'); // Add a temporary visual effect
         setTimeout(function() {
-            $('.card-header.bg-success').removeClass('pulse');
-        }, 1000);
+            formCardHeader.removeClass('pulse');
+        }, 1000); // Remove effect after 1 second
         
-        // Scroll to the form
+        // Scroll smoothly to the form
         $('html, body').animate({
-            scrollTop: $("#deduction-form").offset().top - 100
-        }, 500);
+            scrollTop: form.offset().top - 100 // Adjust offset as needed
+        }, 500); // Animation duration
     });
 });
 </script>
+
+<style>
+/* Simple pulse animation for highlighting */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+}
+.pulse {
+    animation: pulse 1s;
+}
+.quick-add-card {
+    cursor: pointer; /* Indicate cards are clickable */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.quick-add-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
 {% endblock %}

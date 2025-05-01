@@ -1,11 +1,12 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, TextAreaField, DateField, IntegerField, SelectMultipleField, RadioField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, NumberRange
-from flask_wtf.file import FileField, FileAllowed
-from models import User
-from wtforms.fields import FloatField
-from wtforms.validators import NumberRange, Optional
-from datetime import datetime, timedelta  # Add datetime import here
+from flask_wtf.file import FileField, FileAllowed  # Add this import
+from wtforms import (
+    StringField, PasswordField, SubmitField, SelectField, TextAreaField,
+    DateField, IntegerField, FloatField, BooleanField, HiddenField,
+    DecimalField, RadioField, SelectMultipleField  # Add SelectMultipleField here
+)
+from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional, NumberRange
+from datetime import datetime, date, timedelta  # Add datetime import here
 
 class LoginForm(FlaskForm):
     # Change from email to username_or_email
@@ -303,15 +304,18 @@ class PayrollForm(FlaskForm):
             raise ValidationError('End date cannot be before period_start.')
 
 class PayrollDeductionForm(FlaskForm):
-    """Form for adding deductions to a payroll record"""
-    deduction_type = SelectField('Type', choices=[
+    """Form for adding deductions to a payroll"""
+    deduction_type = SelectField('Deduction Type', choices=[
         ('tax', 'Tax'),
         ('insurance', 'Insurance'),
         ('retirement', 'Retirement'),
+        ('sss', 'SSS Contribution'),
+        ('pagibig', 'Pag-IBIG Contribution'),
+        ('philhealth', 'PhilHealth Contribution'), # Added PhilHealth
         ('other', 'Other')
     ], validators=[DataRequired()])
-    description = StringField('Description', validators=[DataRequired(), Length(max=100)])
-    amount = FloatField('Amount (₱)', validators=[DataRequired(), NumberRange(min=0)])
+    description = StringField('Description', validators=[DataRequired()])
+    amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
     submit = SubmitField('Add Deduction')
 
 class PayrollSearchForm(FlaskForm):
