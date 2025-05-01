@@ -27,11 +27,6 @@
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="d-flex justify-content-end gap-2">
-            {# Edit Button - Show if draft or pending #}
-            {% if payroll.status in ['draft', 'pending'] %}
-          
-            {% endif %}
-
             {# Manage Deductions Button - Show if draft or pending #}
             {% if payroll.status in ['draft', 'pending'] %}
             <a href="{{ url_for('payroll.manage_deductions', payroll_id=payroll.id) }}" class="btn btn-outline-secondary">
