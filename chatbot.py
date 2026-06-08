@@ -11,8 +11,15 @@ from models import db, User, EmployeeProfile, LeaveRequest, TrainingEnrollment, 
 # Load environment variables
 load_dotenv()
 
-# Initialize Gemini API client
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+# Initialize Gemini API client (optional - will be None if not provided)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+client = None
+if GEMINI_API_KEY:
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Failed to initialize Gemini client: {e}")
+        client = None
 
 class HRChatbot:
     """School HR Assistant powered by Google Gemini API with user data integration"""
@@ -159,33 +166,40 @@ class HRChatbot:
     
     def get_response(self, user_message, user_id):
         """Get a response from the Gemini model for the user message"""
+        # Check if client is available
+        if not client:
+            return {
+                "status": "error",
+                "message": "Chatbot is not configured. Please add GEMINI_API_KEY to your environment variables."
+            }
+
         try:
             # Initialize history for user if not exists
             if user_id not in self.history:
                 self.history[user_id] = []
-                
+
             # Get personalized system prompt
             system_prompt = self.get_personalized_system_prompt(user_id)
-            
+
             # Add user message to history
             self.history[user_id].append({"role": "user", "parts": [{"text": user_message}]})
-            
+
             # Prepare the conversation history with system prompt
             conversation = [{"role": "model", "parts": [{"text": system_prompt}]}]
             conversation.extend(self.history[user_id])
-            
+
             # Generate response using the client
             response = client.models.generate_content(
                 model=self.model_name,
                 contents=conversation
             )
-            
+
             # Extract the text from the response
             response_text = response.text
-            
+
             # Add model response to history
             self.history[user_id].append({"role": "model", "parts": [{"text": response_text}]})
-            
+
             return {
                 "status": "success",
                 "message": response_text
