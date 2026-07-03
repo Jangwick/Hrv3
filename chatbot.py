@@ -4,17 +4,24 @@ School HR System Chatbot using Google Gemini API with user data integration
 import os
 import json
 from dotenv import load_dotenv
-from google import genai
 from flask_login import current_user
 from models import db, User, EmployeeProfile, LeaveRequest, TrainingEnrollment, TrainingProgram
 
 # Load environment variables
 load_dotenv()
 
+# Try to import google genai - optional dependency
+try:
+    from google import genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+    genai = None
+
 # Initialize Gemini API client (optional - will be None if not provided)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 client = None
-if GEMINI_API_KEY:
+if GEMINI_AVAILABLE and GEMINI_API_KEY:
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
     except Exception as e:
